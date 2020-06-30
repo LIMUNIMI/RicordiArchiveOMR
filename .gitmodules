@@ -1,0 +1,3 @@
+[submodule "staff-lines-removal"]
+	path = staff-lines-removal
+	url = https://github.com/ajgallego/staff-lines-removal
