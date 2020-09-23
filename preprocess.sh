@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 OLDIFS="$IFS"
 IFS=$'\n' # bash specific
 export THEANO_FLAGS="device=cuda0,force_device=True,floatX=float32"
