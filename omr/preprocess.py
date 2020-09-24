@@ -5,6 +5,8 @@ Usage:
     preprocess.py (<in_pattern>) (<to_path>) [remove_staff]
 
 """
+import glob
+import os
 from docopt import docopt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -12,7 +14,6 @@ from sklearn.cluster import AgglomerativeClustering
 from skimage import io, feature, exposure, util, transform
 import numpy as np
 from joblib import Parallel, delayed
-import os
 
 extensions = ['.jpg', '.jpeg', '.png']
 lbp_radius = 3
@@ -115,9 +116,14 @@ def process(image, filename, to_path, remove_staff):
     # store blobs in new directory `to_path` with cluster directory
 
 
+def new_glob(x): return glob.iglob(x, recursive=True)
+
+
 def main(in_pattern, to_path, remove_staff):
     if not os.path.exists(to_path):
         os.mkdir(to_path)
+
+    io.collection.glob = new_glob
 
     image_collection = io.ImageCollection(in_pattern)
     Parallel(n_jobs=-1)(delayed(process)(image, image_collection.files[i],
