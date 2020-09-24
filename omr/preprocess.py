@@ -7,6 +7,7 @@ Usage:
 """
 import glob
 import os
+import pathlib
 from docopt import docopt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -93,16 +94,19 @@ def process(image, filename, to_path, remove_staff):
         data.append(
             np.concatenate([lbp_hist, hist, lpeaks, cpeaks, [blob.size]]))
     data = StandardScaler().fit_transform(data)
-    data = PCA(n_components=10).fit_transform(data)
+    data = PCA(n_components=min(10, min(data.shape[0],
+                                        data.shape[1]))).fit_transform(data)
     clusters = AgglomerativeClustering(distance_threshold=10,
                                        n_clusters=None).fit_predict(data)
 
     root, file = os.path.split(filename)
     base, ext = os.path.splitext(file)
+    if root[0] == '/':
+        root = root[1:]
     to_root = os.path.join(to_path, root)
 
     if not os.path.exists(to_root):
-        os.mkdir(to_root)
+        pathlib.Path(to_root).mkdir(parents=True, exist_ok=True)
 
     for i, blob in enumerate(blobs):
         blob = exposure.rescale_intensity(blob, out_range='float')
@@ -116,12 +120,13 @@ def process(image, filename, to_path, remove_staff):
     # store blobs in new directory `to_path` with cluster directory
 
 
-def new_glob(x): return glob.iglob(x, recursive=True)
+def new_glob(x):
+    return glob.iglob(x, recursive=True)
 
 
 def main(in_pattern, to_path, remove_staff):
     if not os.path.exists(to_path):
-        os.mkdir(to_path)
+        pathlib.Path(to_path).mkdir(parents=True, exist_ok=True)
 
     io.collection.glob = new_glob
 
