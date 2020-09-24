@@ -15,3 +15,4 @@
 
 ## preprocess
 1. `./preprocess.sh [dir to data without ending /]`
+2. `poetry run python -m omr.preprocess 'dataset/**/*_nostaff.jpg' 'processed' 
