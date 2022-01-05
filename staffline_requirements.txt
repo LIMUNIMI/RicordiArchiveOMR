@@ -3,6 +3,7 @@ astor==0.8.1
 backports.functools-lru-cache==1.6.1
 backports.weakref==1.0.post1
 bleach==1.5.0
+cython==0.29.26
 cycler==0.10.0
 enum34==1.1.10
 funcsigs==1.0.2
@@ -14,6 +15,7 @@ html5lib==0.9999999
 Keras==2.1.6
 kiwisolver==1.1.0
 Markdown==3.1.1
+mako==1.1.1
 matplotlib==2.2.2
 mock==3.0.5
 numpy==1.14.3
