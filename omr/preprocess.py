@@ -5,7 +5,6 @@ Usage:
     preprocess.py (<in_pattern>) (<to_path>)
 
 """
-import glob
 import os
 from pathlib import Path
 import subprocess
@@ -34,51 +33,34 @@ class Blob:
     y1: int
 
 
-class StaffRemover():
+def remove_staffs(self,
+                  fname: Optional[Path] = None,
+                  image: Optional[np.ndarray] = None):
+    """
+    Run the staff-removal algorithm. If `fname` is None, `image` is used
+    and an array is returned, otherise, `fname` is used and a filename is returned.
 
-    def __init__(self):
-        self.environ = os.environ.copy()
-        self.environ[
-            "THEANO_FLAGS"] = "device=cuda0,force_device=True,floatX=float32"
-        self.environ["KERAS_BACKEND"] = "theano"
-        self.environ["LD_LIBRARY_PATH"] = "/usr/local/lib/:$LD_LIBRARY_PATH"
-        self.environ["PYENV_VERSION"] = "2.7.18"
+    For some reason, it doesn't work
+    """
+    assert fname is not None or image is not None, "Please, provide a file or an array"
 
-    def get_cmd(self, infile, outfile):
-        return [
-            'pyenv', 'exec', 'python', 'demo.py', '-imgpath', f'"{infile}"',
-            '-modelpath MODELS/model_weights_GR_256x256_s256_l3_f96_k5_se1_e200_b8_p25_esg.h5',
-            '-layers', '3', '-window', '256', '-filters', '96', '-ksize', '5',
-            '-th', '0.3', '-save', f'"{outfile}"'
-        ]
+    if image is not None:
+        _, fname = tempfile.mkstemp('.jpg')
+        io.imsave(fname, image)
 
-    def run(self,
-            fname: Optional[Path] = None,
-            image: Optional[np.ndarray] = None):
-        """
-        Run the staff-removal algorithm. If `fname` is None, `image` is used
-        and an array is returned, otherise, `fname` is used and a filename is returned.
-        """
-        assert fname is not None or image is not None, "Please, provide a file or an array"
+    outfname = str(fname.with_suffix('')) + '_nostaff.jpg'
+    proj_dir = Path('__file__').parent.parent
+    subprocess.run(
+        ['bash', str(proj_dir / 'preprocess.sh'),
+         str(fname), outfname])
 
-        if image is not None:
-            _, fname = tempfile.mkstemp('.jpg')
-            io.imsave(fname, image)
+    if image is not None:
+        out = io.imread(outfname)
+        os.remove(outfname)
+    else:
+        out = outfname
 
-        outfname = str(fname.with_suffix('')) + '_nostaff.jpg'
-        curdir = Path('.').absolute()
-        os.chdir(Path(__file__).parent.parent / 'staff-lines-removal')
-        __import__('ipdb').set_trace()
-        subprocess.run(self.get_cmd(str(fname), outfname), env=self.environ)
-        os.chdir(curdir)
-
-        if image is not None:
-            out = io.imread(outfname)
-            os.remove(outfname)
-        else:
-            out = outfname
-
-        return out
+    return out
 
 
 def find_blobs(image, method=feature.blob_dog):
@@ -107,9 +89,10 @@ def find_blobs(image, method=feature.blob_dog):
     return out
 
 
-def process(filename, to_path, staff_remover):
+def process(filename, to_path, staff_removal=False):
     original_filename = filename
-    filename = staff_remover.run(fname=filename)
+    if staff_removal:
+        filename = remove_staffs(fname=filename)
 
     image = io.imread(filename)
 
@@ -183,7 +166,7 @@ def process(filename, to_path, staff_remover):
         blob_obj.cluster = clusters[i]
         blob_obj.type = None
         json.dump(blob_obj.__dict__, open(blob_path.with_suffix('.json')))
-        json_data["blobs"].append(blob_path)
+        json_data["blobs"].append(blob_path.with_suffix('.json'))
 
     json.dump(json_data, open(original_filename.with_suffix('.json')))
 
@@ -192,16 +175,15 @@ def main(toml_config: str):
     import toml
     conf = toml.load(open(toml_config))
     to_path = conf['preprocessing']['blob_dir']
-    in_pattern = conf['preprocessing']['input_pattern']
-
-    staff_remover = StaffRemover()
+    in_pattern = Path(
+        conf['preprocessing']['input_dir']).glob('**/*_nostaff.jpg')
 
     if not os.path.exists(to_path):
         Path(to_path).mkdir(parents=True, exist_ok=True)
 
     Parallel(n_jobs=1, backend='multiprocessing')(
-        delayed(process)(Path(file), to_path, staff_remover)
-        for file in glob.iglob(in_pattern, recursive=True))
+        delayed(process)(Path(file), to_path, staff_removal=False)
+        for file in in_pattern)
 
 
 if __name__ == "__main__":

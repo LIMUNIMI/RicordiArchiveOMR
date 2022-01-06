@@ -1,5 +1,5 @@
 [preprocessing]
-# a POSIX glob pattern listing the input images (see python `iglob.glob`)
-  input_pattern = "/datasets/ricordi/**/*.jpg"
-# output dir for blob files
+  # input directory
+  input_dir = "/datasets/ricordi/"
+  # output dir for blob files
   blob_dir = "/datasets/ricordi_blobs"
