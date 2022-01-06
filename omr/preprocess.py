@@ -45,14 +45,12 @@ class StaffRemover():
         self.environ["PYENV_VERSION"] = "2.7.18"
 
     def get_cmd(self, infile, outfile):
-        os.chdir('staff-lines-removal')
         return [
-            'pyenv', 'exec', 'python', 'demo.py', '-imgpath', infile,
+            'pyenv', 'exec', 'python', 'demo.py', '-imgpath', f'"{infile}"',
             '-modelpath MODELS/model_weights_GR_256x256_s256_l3_f96_k5_se1_e200_b8_p25_esg.h5',
             '-layers', '3', '-window', '256', '-filters', '96', '-ksize', '5',
-            '-th', '0.3', '-save', outfile
+            '-th', '0.3', '-save', f'"{outfile}"'
         ]
-        os.chdir('..')
 
     def run(self,
             fname: Optional[Path] = None,
@@ -68,7 +66,11 @@ class StaffRemover():
             io.imsave(fname, image)
 
         outfname = str(fname.with_suffix('')) + '_nostaff.jpg'
-        subprocess.run(self.get_cmd(str(fname), outfname))
+        curdir = Path('.').absolute()
+        os.chdir(Path(__file__).parent.parent / 'staff-lines-removal')
+        __import__('ipdb').set_trace()
+        subprocess.run(self.get_cmd(str(fname), outfname), env=self.environ)
+        os.chdir(curdir)
 
         if image is not None:
             out = io.imread(outfname)
@@ -186,14 +188,20 @@ def process(filename, to_path, staff_remover):
     json.dump(json_data, open(original_filename.with_suffix('.json')))
 
 
-def main(in_pattern, to_path):
+def main(toml_config: str):
+    import toml
+    conf = toml.load(open(toml_config))
+    to_path = conf['preprocessing']['blob_dir']
+    in_pattern = conf['preprocessing']['input_pattern']
+
     staff_remover = StaffRemover()
 
     if not os.path.exists(to_path):
         Path(to_path).mkdir(parents=True, exist_ok=True)
 
-    Parallel(n_jobs=10)(delayed(process)(Path(file), to_path, staff_remover)
-                        for file in glob.iglob(in_pattern, recursive=True))
+    Parallel(n_jobs=1, backend='multiprocessing')(
+        delayed(process)(Path(file), to_path, staff_remover)
+        for file in glob.iglob(in_pattern, recursive=True))
 
 
 if __name__ == "__main__":
