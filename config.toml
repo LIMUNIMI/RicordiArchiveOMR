@@ -9,8 +9,10 @@
   # is hard-coded in server.py, so values should change accordingly
   annotation_values = {Rilevante = 1, Irrilevante = 0}
   # the annotation field that will be updated in the json
-  annotation_filed = "type"
+  annotation_field = "type"
   # the number of blobs in the control group
   control_length = 100
   # how many blobs should pass before one from the control group is picked (on average)
   control_freq = 200
+  # port for the app
+  port = 1992

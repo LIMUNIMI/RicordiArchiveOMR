@@ -24,4 +24,8 @@
 
 ## Data Entry
 
-1. `pdm run data_entry`
+  `pdm run data_entry` 
+
+This will start the Flask app listening on _all_ hosts requests to your machine
+on port 1992. You can configure the port in `config.toml`, as well as other
+options (documented in `config.toml`).

@@ -27,7 +27,7 @@ class ImageManager:
         # shuffling blobs
         full_json_list = list(blob_pattern)
         random = np.random.default_rng(1992)
-        full_json_list = random.shuffle(full_json_list)
+        random.shuffle(full_json_list)  # in-place...
 
         # splitting control set
         self.control_jsons = full_json_list[:control_length]
@@ -55,7 +55,7 @@ class ImageManager:
             FOUND = False
             for idx, json_fname in enumerate(
                     self.normal_jsons[self.current_control_idx:]):
-                if read_annotation(json_fname, annotation_field) is None:
+                if read_annotation(json_fname, self.annotation_field) is None:
                     FOUND = True
                     self.current_normal_idx = idx
                     self.current_json = json_fname
@@ -77,6 +77,7 @@ class ImageManager:
 
 
 conf = toml.load(open('./config.toml'))
+__port = conf['data_entry']['port']
 __annotation_values = conf['data_entry']['annotation_values']
 __annotation_field = conf['data_entry']['annotation_field']
 __control_length = conf['data_entry']['control_length']
@@ -149,4 +150,4 @@ def home():
 
 def run():
     import waitress
-    waitress.serve(app, port=1992)
+    waitress.serve(app, port=__port)
