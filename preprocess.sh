@@ -16,14 +16,21 @@ cd staff-lines-removal
 # for each jpg file in the dataset that is not in `altro` directory
 for i in $(find $data_path -path ${data_path}/altro -prune -o -name "*.jpg")
 do
-  echo
-  echo
-  echo "====================================================="
-  echo "Processing $i"
-  echo "====================================================="
-  echo
-  echo
-  PYENV_VERSION=miniconda2-4.7.12/envs/staff_line_removal python demo.py -imgpath "$i" -modelpath MODELS/model_weights_GR_256x256_s256_l3_f96_k5_se1_e200_b8_p25_esg.h5 -layers 3 -window 256 -filters 96 -ksize 5 -th 0.3 -save "${i/.jpg/_nostaff.jpg}"
+  if [[ "${i: -12}" != "_nostaff.jpg" ]]; then
+    # if $i does not end with `_nostaff.jpg`
+    outfile=${i/.jpg/_nostaff.jpg}
+    if [[ ! -f "$outfile" ]]; then
+      # if $outfile does not exists
+      echo
+      echo
+      echo "====================================================="
+      echo "Processing $i"
+      echo "====================================================="
+      echo
+      echo
+      PYENV_VERSION=miniconda2-4.7.12/envs/staff_line_removal python demo.py -imgpath "$i" -modelpath MODELS/model_weights_GR_256x256_s256_l3_f96_k5_se1_e200_b8_p25_esg.h5 -layers 3 -window 256 -filters 96 -ksize 5 -th 0.3 -save "$outfile"
+    fi
+  fi
 done
 cd ..
 IFS="$OLDIFS"
