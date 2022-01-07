@@ -19,5 +19,9 @@
 ## Preprocess
 
 1. setup the relative section in `config.toml`
-2. `./preprocess.sh`
+2. remove staff-lines: `./preprocess.sh`; if it stops, you can restart it
 3. `pdm run preprocess`
+
+## Data Entry
+
+1. `pdm run data_entry`

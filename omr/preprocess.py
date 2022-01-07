@@ -19,6 +19,7 @@ from sklearn.cluster import AgglomerativeClustering
 from skimage import io, feature, exposure, util, transform
 import numpy as np
 from joblib import Parallel, delayed
+from tqdm import tqdm
 
 lbp_radius = 3
 lbp_n_points = 8 * lbp_radius
@@ -165,10 +166,10 @@ def process(filename, to_path, staff_removal=False):
         blob_obj.id = i
         blob_obj.cluster = clusters[i]
         blob_obj.type = None
-        json.dump(blob_obj.__dict__, open(blob_path.with_suffix('.json')))
+        json.dump(blob_obj.__dict__, open(blob_path.with_suffix('.json'), "w"))
         json_data["blobs"].append(blob_path.with_suffix('.json'))
 
-    json.dump(json_data, open(original_filename.with_suffix('.json')))
+    json.dump(json_data, open(original_filename.with_suffix('.json')), "w")
 
 
 def main(toml_config: str):
@@ -183,7 +184,7 @@ def main(toml_config: str):
 
     Parallel(n_jobs=1, backend='multiprocessing')(
         delayed(process)(Path(file), to_path, staff_removal=False)
-        for file in in_pattern)
+        for file in tqdm(in_pattern))
 
 
 if __name__ == "__main__":

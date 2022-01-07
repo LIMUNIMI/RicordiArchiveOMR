@@ -10,6 +10,9 @@ dependencies = [
     "joblib>=1.1.0",
     "toml>=0.10.2",
     "scikit-learn>=1.0.2",
+    "tqdm>=4.62.3",
+    "flask>=2.0.2",
+    "waitress>=2.0.0",
 ]
 requires-python = ">=3.9"
 license = {text = "MIT"}
@@ -24,6 +27,8 @@ homepage = ""
 
 [tool.pdm.scripts]
 preprocess = {call = "omr.preprocess:main('config.toml')"}
+data_entry = {call = "omr.server:run()"}
+data_entry_debug = { cmd = "flask run -p 1992", env = { FLASK_APP="omr.server", FLASK_ENV="development" } }
 
 [tool.pdm.dev-dependencies]
 ipython = [
