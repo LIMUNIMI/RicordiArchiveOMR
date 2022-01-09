@@ -11,10 +11,10 @@
   # the annotation field that will be updated in the json
   annotation_field = "debugging"
   # the number of blobs in the control group
-  control_length = 2
+  control_length = 100
   # how many blobs should pass before one from the control group is picked (on average)
-  control_freq = 1
+  control_freq = 200
   # port for the app
   port = 1992
   # the name that will be used for the control json
-  annotator = "debug2"
+  annotator = "tenca1"
