@@ -1,0 +1,188 @@
+import os
+import json
+import shutil
+import random
+from pathlib import Path
+
+import numpy as np
+from scipy.stats import spearmanr
+
+random.seed(1992)
+
+
+def read_json_field(fname, annotation_field):
+    data = json.load(open(fname, "r"))
+    if annotation_field in data:
+        return data[annotation_field]
+    else:
+        return None
+
+
+class ImageManager:
+    """
+    An iterator that provides the next image that must be annotated
+    """
+
+    def __init__(self,
+                 blob_pattern,
+                 annotation_field,
+                 annotator,
+                 control_length=100,
+                 control_freq=200,
+                 annotator_json_fn='__annotator.json',
+                 control_json_fn='__control.json',
+                 static_dir='./static'):
+
+        assert control_length or control_json_fn, "Please, provide control_length or control_json_fn and normal_json_fn"
+        # shuffling blobs
+        full_json_list = [str(i) for i in blob_pattern]
+        random.seed(1992)
+        random.shuffle(full_json_list)  # in-place...
+
+        # splitting control set
+        if os.path.exists(control_json_fn):
+            _data = json.load(open(control_json_fn))
+            self.control_jsons = _data['control']
+            self.normal_jsons = _data['normal']
+        else:
+            self.control_jsons = full_json_list[:control_length]
+            self.normal_jsons = full_json_list[control_length:]
+            json.dump(
+                {
+                    'control': self.control_jsons,
+                    'normal': self.normal_jsons
+                }, open(control_json_fn, "w"))
+
+        # initializing fields
+        self.current_normal_idx = 0
+        self.current_control_idx = -1
+        self.annotation_field = annotation_field
+        self.control_freq = control_freq
+        self.static_dir = Path(static_dir)
+        self.static_dir.mkdir(exist_ok=True, parents=True)
+        self.control_length = control_length
+
+        # initializing annotator_json
+        self.annotator_json_fn = annotator_json_fn
+        self.annotator = annotator
+        self._annotator_rating = 'n.a.'
+        if os.path.exists(annotator_json_fn):
+            self.__init_annotator(annotator)
+        else:
+            annotator_json = {annotator: [[] for _ in range(control_length)]}
+            json.dump(annotator_json, open(annotator_json_fn, "w"))
+
+        self.is_control = False
+
+    def __init_annotator(self, annotator):
+        annotator_json = json.load(open(self.annotator_json_fn))
+        if annotator not in annotator_json:
+            annotator_json[annotator] = [[]
+                                         for _ in range(self.control_length)]
+        json.dump(annotator_json, open(self.annotator_json_fn, "w"))
+        self.update_rating(annotator_json, self.annotator)
+
+    def __next__(self):
+        """
+        returns the next image path that should be annotated
+        """
+        # checking if we should provide a control json
+        if random.random() < 1 / self.control_freq:
+            self.is_control = True
+            # pick next control blob
+            self.current_control_idx += 1
+            print(f"control_idx: {self.current_control_idx}")
+            if self.current_control_idx >= len(self.control_jsons):
+                self.current_control_idx = 0
+            self.current_json = self.control_jsons[self.current_control_idx]
+        else:
+            self.is_control = False
+            # looking for the first json not annotated
+            FOUND = False
+            for idx, json_fname in enumerate(
+                    self.normal_jsons[self.current_normal_idx:]):
+                if read_json_field(json_fname, self.annotation_field) is None:
+                    FOUND = True
+                    self.current_normal_idx = idx
+                    self.current_json = json_fname
+                    break
+            if not FOUND:
+                raise StopIteration
+
+        # copy the image in a place visible to the server
+        # if we want to show the original image, we should put it here
+        img_path = read_json_field(self.current_json, "path")
+        suffix = Path(img_path).suffix
+        served_img = self.static_dir / ("served_img" + suffix)
+        shutil.copyfile(img_path, served_img)
+        return str(served_img)
+
+    def save_annotation(self, annotation_value):
+        if self.is_control:
+            # this was a control blob
+            annotator_json = json.load(open(self.annotator_json_fn))
+            if self.annotator not in annotator_json:
+                self.__init_annotator(self.annotator)
+                annotator_json = json.load(open(self.annotator_json_fn))
+            annotator_json[self.annotator][self.current_control_idx].append(
+                annotation_value)
+            self.update_rating(annotator_json, self.annotator)
+            json.dump(annotator_json, open(self.annotator_json_fn, "w"))
+        else:
+            json_data = json.load(open(self.current_json, "r"))
+            json_data[self.annotation_field] = annotation_value
+            json.dump(json_data, open(self.current_json, "w"))
+
+    @property
+    def annotator_rating(self):
+        return self._annotator_rating
+
+    @annotator_rating.setter
+    def annotator_rating(self, x):
+        if x != self._annotator_rating:
+            self._annotator_rating = x
+            print(f"New annotator rating: {x}")
+
+    def update_rating(self, data, annotator):
+        """
+        Update the rating computed for this annotator in respect to itself and
+        to other annotators
+
+        MUST BE REVISED!
+        """
+        if annotator not in data:
+            self.annotator_rating = "n.a."
+            return
+        # computing self-correlation
+        L = min(len(i) for i in data[annotator])
+        if L > 1:
+            self_data = [i[:L] for i in data[annotator]]
+            r, _ = spearmanr(self_data, self_data, axis=0)
+            if np.isnan(r):
+                self_r = 1.0
+            else:
+                self_r = r[np.tril_indices(r.shape[0])].mean()
+        else:
+            self.annotator_rating = "n.a."
+            return
+
+        annotator_indices = {}
+        inter_data = []
+        idx = 0
+        for ann, vals in data.items():
+            L = min(len(i) for i in data[ann])
+            if L <= 0:
+                continue
+            # average annotation for each blob
+            annotator_data = np.mean([i[:L] for i in data[ann]], axis=1)
+            inter_data.append(annotator_data)
+            annotator_indices[ann] = slice(idx, L)
+            idx += L
+
+        # how much this annotator average is different from the average
+        # annotator
+        inter_r, _ = spearmanr(np.mean(self_data, axis=1),
+                               np.mean(inter_data, axis=0))
+        if np.isnan(inter_r):
+            inter_r = 1.0
+        self.annotator_rating = f"{round((self_r + inter_r) / 2 * 100)}%"

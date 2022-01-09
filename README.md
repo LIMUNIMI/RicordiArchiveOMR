@@ -22,6 +22,14 @@
 2. remove staff-lines: `./preprocess.sh`; if it stops, you can restart it
 3. `pdm run preprocess`
 
+After this, you will find two files ending with `_nostaff.jpg` and
+`_nostaff.json` for each file in the archive, containing the image without
+staff and the data about that image (original file name, list of blobs, etc.).
+You will also find a directory ending with `_nostaff` for each file in the
+archive, containing the list of blobs, each in `png` format and accompanied by
+a `.json` file containing the position, the parent image path and the
+annotations (after the _Data Entry_ step).
+
 ## Data Entry
 
   `pdm run data_entry` 
@@ -29,3 +37,13 @@
 This will start the Flask app listening on _all_ hosts requests to your machine
 on port 1992. You can configure the port in `config.toml`, as well as other
 options (documented in `config.toml`).
+
+The server will create a 2 files:
+
+* `__annotator.json`: 
+  * keys are annotators (see `config.toml`);
+  * value of each key is a list of lists where the i-th list represents the
+  annotations given for the i-th control blob
+* `__control.json`:
+  * keys are `normal` and `control`
+  * values are lists of string with the path of the blobs in each split
