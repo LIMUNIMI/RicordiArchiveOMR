@@ -2,7 +2,7 @@
   # input directory
   input_dir = "/datasets/ricordi/"
   # output dir for blob files
-  blob_dir = "/datasets/ricordi_blobs"
+  blob_dir = "/datasets/ricordi/"
 
 [data_entry]
   # the following are here for future reference, but for now the page template

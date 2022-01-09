@@ -11,7 +11,11 @@ random = np.random.default_rng(1992)
 
 
 def read_annotation(fname, annotation_field):
-    return json.load(open(fname, "r"))[annotation_field]
+    data = json.load(open(fname, "r"))
+    if annotation_field in data:
+        return data[annotation_field]
+    else:
+        return None
 
 
 class ImageManager:
