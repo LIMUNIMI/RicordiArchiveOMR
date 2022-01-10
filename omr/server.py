@@ -12,6 +12,7 @@ config = toml.load(open('./config.toml'))
 s = config['data_entry']
 BLOB_PATTERN = Path(
     config['preprocessing']['blob_dir']).glob("**/*_blob*.json")
+ORIGINAL_IN_PARTS = len(Path(config['preprocessing']['input_dir']).parts)
 IMAGE_MANAGER = ImageManager(BLOB_PATTERN,
                              s["annotation_field"],
                              s["annotator"],
@@ -36,23 +37,28 @@ def home():
 
     # get next image
     try:
-        blob_path, big_blob_path, partiture_path, parents = next(IMAGE_MANAGER)
-        print(parents)
-        blob = f'<img src="{blob_path}" height=200px/>'
+        big_blob_path, partiture_path, in_parts = next(IMAGE_MANAGER)
+        in_parts = in_parts[ORIGINAL_IN_PARTS:ORIGINAL_IN_PARTS + 2]
+        from_ = f"This image is from <i><b>{in_parts[0]}</b>, {in_parts[1]}</i>"
+        # blob = f'<img src="{blob_path}" height=200px/>'
         big_blob = f'<img src="{big_blob_path}" height=400px/>'
         partiture = f'<a href="{partiture_path}" target="_blank">Vedi la pagina originale</a>'
     except StopIteration:
         blob = "<h2>Ended!</h2>"
         big_blob = ""
         partiture = ""
+        from_ = ""
 
     # return the page
     return f"""
         <div id="content">
             <h1>Archivio Ricordi ASL 2022</h1>
-            <h3>La seguente immagine rappresenta un segno musicale rilevante?</h3>
+            <h3>La seguente immagine nel rettangolo rosso rappresenta un segno musicale rilevante?</h3>
             <p>
-                {blob}
+                {from_}
+            </p>
+            <p>
+                {big_blob}
             </p>
             <p>
 
@@ -60,10 +66,6 @@ def home():
                     <input style="background-color:#000095;" type="submit" name="{s['annotation_field']}" value="Rilevante" />
                     <input style="background-color:#a66c00;" type="submit" name="{s['annotation_field']}" value="Irrilevante" />
                 </form>
-            </p>
-            <p>
-                This is a larger view:<br/>
-                {big_blob}
             </p>
             <p>
                 {partiture}
@@ -84,19 +86,10 @@ def home():
                 cursor: pointer;
             }}
 
-            <!--
             body {{
-                display: table;
                 text-align: center;
-                height: 100%;
-                width: 100%;
             }}
 
-            #content {{
-                display: table-cell;
-                vertical-align: middle;
-            }}
-            -->
         </style>
     """
 

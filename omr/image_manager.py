@@ -148,16 +148,16 @@ class ImageManager:
         partiture = draw_rectangle(original_image.copy(), b["x0"], b["y0"],
                                    b["x1"], b["y1"])
 
-        blob_jpg = self.static_dir / "blob.jpg"
+        # blob_jpg = self.static_dir / "blob.jpg"
         big_blob_jpg = self.static_dir / "big_blob.jpg"
         partiture_jpg = self.static_dir / "partiture.jpg"
 
-        io.imsave(blob_jpg, section)
+        # io.imsave(blob_jpg, section)
         io.imsave(big_blob_jpg, big_section)
         io.imsave(partiture_jpg, partiture)
 
-        return str(blob_jpg), str(big_blob_jpg), str(
-            partiture_jpg), original_image_path.parents
+        return str(big_blob_jpg), str(partiture_jpg), list(
+            original_image_path.parts)
 
     def save_annotation(self, annotation_value):
         if self.is_control:
