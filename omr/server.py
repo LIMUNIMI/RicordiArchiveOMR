@@ -36,10 +36,15 @@ def home():
 
     # get next image
     try:
-        img_path = next(IMAGE_MANAGER)
-        img = f'<img src="{img_path}" height=300px/>'
+        blob_path, big_blob_path, partiture_path, parents = next(IMAGE_MANAGER)
+        print(parents)
+        blob = f'<img src="{blob_path}" height=200px/>'
+        big_blob = f'<img src="{big_blob_path}" height=400px/>'
+        partiture = f'<a href="{partiture_path}" target="_blank">Vedi la pagina originale</a>'
     except StopIteration:
-        img = "<h2>Ended!</h2>"
+        blob = "<h2>Ended!</h2>"
+        big_blob = ""
+        partiture = ""
 
     # return the page
     return f"""
@@ -47,7 +52,7 @@ def home():
             <h1>Archivio Ricordi ASL 2022</h1>
             <h3>La seguente immagine rappresenta un segno musicale rilevante?</h3>
             <p>
-                {img}
+                {blob}
             </p>
             <p>
 
@@ -55,6 +60,13 @@ def home():
                     <input style="background-color:#000095;" type="submit" name="{s['annotation_field']}" value="Rilevante" />
                     <input style="background-color:#a66c00;" type="submit" name="{s['annotation_field']}" value="Irrilevante" />
                 </form>
+            </p>
+            <p>
+                This is a larger view:<br/>
+                {big_blob}
+            </p>
+            <p>
+                {partiture}
             </p>
         </div>
         <style>
@@ -72,6 +84,7 @@ def home():
                 cursor: pointer;
             }}
 
+            <!--
             body {{
                 display: table;
                 text-align: center;
@@ -83,6 +96,7 @@ def home():
                 display: table-cell;
                 vertical-align: middle;
             }}
+            -->
         </style>
     """
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.stats import spearmanr
-from skimage import io
+from skimage import io, draw
 
 random.seed(1992)
 
@@ -16,6 +16,14 @@ def read_json_field(fname, annotation_field):
         return data[annotation_field]
     else:
         return None
+
+
+def draw_rectangle(image, x0, y0, x1, y1, color=(255, 0, 0)):
+    image[x0:x1, y0, :] = color
+    image[x0:x1, y1, :] = color
+    image[x0, y0:y1, :] = color
+    image[x1, y0:y1, :] = color
+    return image
 
 
 class ImageManager:
@@ -31,7 +39,8 @@ class ImageManager:
                  control_freq=200,
                  annotator_json_fn='__annotator.json',
                  control_json_fn='__control.json',
-                 static_dir='./static'):
+                 static_dir='./static',
+                 enlarge=50):
 
         assert control_length or control_json_fn, "Please, provide control_length or control_json_fn and normal_json_fn"
         # shuffling blobs
@@ -73,6 +82,7 @@ class ImageManager:
             json.dump(annotator_json, open(annotator_json_fn, "w"))
 
         self.is_control = False
+        self.enlarge = enlarge
 
     def __init_annotator(self, annotator):
         annotator_json = json.load(open(self.annotator_json_fn))
@@ -111,19 +121,37 @@ class ImageManager:
 
         # copy the image in a place visible to the server
         # if we want to show the original image, we should put it here
-        blob_obj = json.load(open(self.current_json))
+        b = json.load(open(self.current_json))
 
-        original_image = str(Path(blob_obj["path"]).parent).replace(
-            '_nostaff', '')
-        original_image = io.imread(original_image + '.jpg')
-        section = original_image[blob_obj["x0"]:blob_obj["x1"],
-                                 blob_obj["y0"]:blob_obj["y1"]]
-        # original_image = io.imread(blob_obj["parent"])
-        # img_path = read_json_field(self.current_json, "path")
-        blob_jpg = self.static_dir / ("blob.jpg")
+        original_image_path = Path(
+            str(Path(b["path"]).parent).replace('_nostaff', '') + '.jpg')
+        # original_image_path = blob_obj["parent"]
+
+        # sectioning the blob
+        original_image = io.imread(original_image_path)
+        section = original_image[b["x0"]:b["x1"], b["y0"]:b["y1"]]
+        x_max = original_image.shape[0] - 1
+        y_max = original_image.shape[1] - 1
+        e = self.enlarge
+        big_section = original_image[max(0, b["x0"] -
+                                         e):min(x_max, b["x1"] + e),
+                                     max(0, b["y0"] -
+                                         e):min(y_max, b["y1"] + e)]
+        big_section = draw_rectangle(big_section.copy(), e, e, -e, -e)
+        # drawing a rectangle in the original image
+        partiture = draw_rectangle(original_image.copy(), b["x0"], b["y0"],
+                                   b["x1"], b["y1"])
+
+        blob_jpg = self.static_dir / "blob.jpg"
+        big_blob_jpg = self.static_dir / "big_blob.jpg"
+        partiture_jpg = self.static_dir / "partiture.jpg"
 
         io.imsave(blob_jpg, section)
-        return str(blob_jpg)
+        io.imsave(big_blob_jpg, big_section)
+        io.imsave(partiture_jpg, partiture)
+
+        return str(blob_jpg), str(big_blob_jpg), str(
+            partiture_jpg), original_image_path.parents
 
     def save_annotation(self, annotation_value):
         if self.is_control:
