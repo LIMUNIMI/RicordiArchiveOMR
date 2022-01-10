@@ -89,6 +89,8 @@ class ImageManager:
 
         self.is_control = False
         self.enlarge = enlarge
+        # setting the internal _idx to 0
+        self._idx = 0
 
     def __init_annotator(self, annotator):
         annotator_json = json.load(open(self.annotator_json_fn))
@@ -104,23 +106,25 @@ class ImageManager:
         """
         # checking if we should provide a control json
         if random.random() < 1 / self.control_freq:
-            self.is_control = True
+            is_control = True
             # pick next control blob
-            self.current_control_idx += 1
             print(f"control_idx: {self.current_control_idx}")
             if self.current_control_idx >= len(self.control_jsons):
                 self.current_control_idx = 0
             self.current_json = self.control_jsons[self.current_control_idx]
+            # store idx to update it when annotation is saved
+            self._idx = 1
         else:
-            self.is_control = False
+            is_control = False
             # looking for the first json not annotated
             FOUND = False
             for idx, json_fname in enumerate(
                     self.normal_jsons[self.current_normal_idx:]):
                 if read_json_field(json_fname, self.annotation_field) is None:
                     FOUND = True
-                    self.current_normal_idx += idx
                     self.current_json = json_fname
+                    # store idx to update it when annotation is saved
+                    self._idx = idx
                     break
             if not FOUND:
                 raise StopIteration
@@ -135,7 +139,7 @@ class ImageManager:
 
         # sectioning the blob
         original_image = io.imread(original_image_path)
-        section = original_image[b["x0"]:b["x1"], b["y0"]:b["y1"]]
+        # section = original_image[b["x0"]:b["x1"], b["y0"]:b["y1"]]
         x_max = original_image.shape[0] - 1
         y_max = original_image.shape[1] - 1
         e = self.enlarge
@@ -156,11 +160,11 @@ class ImageManager:
         io.imsave(big_blob_jpg, big_section)
         io.imsave(partiture_jpg, partiture)
 
-        return str(big_blob_jpg), str(partiture_jpg), list(
-            original_image_path.parts)
+        return self.current_json, is_control, str(big_blob_jpg), str(
+            partiture_jpg), list(original_image_path.parts)
 
-    def save_annotation(self, annotation_value):
-        if self.is_control:
+    def save_annotation(self, json_fn, is_control, annotation_value):
+        if is_control:
             # this was a control blob
             annotator_json = json.load(open(self.annotator_json_fn))
             if self.annotator not in annotator_json:
@@ -170,10 +174,15 @@ class ImageManager:
                 annotation_value)
             self.update_rating(annotator_json, self.annotator)
             json.dump(annotator_json, open(self.annotator_json_fn, "w"))
+            self.current_control_idx += self._idx
         else:
-            json_data = json.load(open(self.current_json, "r"))
+            json_data = json.load(open(json_fn, "r"))
             json_data[self.annotation_field] = annotation_value
-            json.dump(json_data, open(self.current_json, "w"))
+            json.dump(json_data, open(json_fn, "w"))
+            # increase the idx of the corresponding _idx
+            self.current_normal_idx += self._idx
+        # resetting the internal _idx
+        self._idx = 0
 
     @property
     def annotator_rating(self):

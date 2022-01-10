@@ -33,11 +33,14 @@ def home():
         # save annotation
         annotation_value = s["annotation_values"][request.form[
             s["annotation_field"]]]
-        IMAGE_MANAGER.save_annotation(annotation_value)
+        id = request.form["id"]
+        is_control = request.form["is_control"] == "True"
+        IMAGE_MANAGER.save_annotation(id, is_control, annotation_value)
 
     # get next image
     try:
-        big_blob_path, partiture_path, in_parts = next(IMAGE_MANAGER)
+        blob_id, is_control, big_blob_path, partiture_path, in_parts = next(
+            IMAGE_MANAGER)
         in_parts = in_parts[ORIGINAL_IN_PARTS:ORIGINAL_IN_PARTS + 2]
         from_ = f"This image is from <i><b>{in_parts[0]}</b>, {in_parts[1]}</i>"
         # blob = f'<img src="{blob_path}" height=200px/>'
@@ -48,6 +51,8 @@ def home():
         big_blob = ""
         partiture = ""
         from_ = ""
+        blob_id = -1
+        is_control = False
 
     # return the page
     return f"""
@@ -63,6 +68,8 @@ def home():
             <p>
 
                 <form action="" method="post">
+                    <input type="hidden" type="submit" name="id" value="{blob_id}" />
+                    <input type="hidden" type="submit" name="is_control" value="{is_control}" />
                     <input style="background-color:#000095;" type="submit" name="{s['annotation_field']}" value="Rilevante" />
                     <input style="background-color:#a66c00;" type="submit" name="{s['annotation_field']}" value="Irrilevante" />
                 </form>
