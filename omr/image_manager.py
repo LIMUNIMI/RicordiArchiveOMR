@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 from scipy.stats import spearmanr
-from skimage import io, draw
+from skimage import io
 
 random.seed(1992)
 
@@ -19,6 +19,12 @@ def read_json_field(fname, annotation_field):
 
 
 def draw_rectangle(image, x0, y0, x1, y1, color=(255, 0, 0)):
+    xmax = image.shape[0] - 1
+    ymax = image.shape[1] - 1
+    x0 = max(0, x0)
+    y0 = max(0, y0)
+    x1 = min(xmax, x1)
+    y1 = min(ymax, y1)
     image[x0:x1, y0, :] = color
     image[x0:x1, y1, :] = color
     image[x0, y0:y1, :] = color
