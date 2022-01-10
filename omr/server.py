@@ -20,11 +20,42 @@ IMAGE_MANAGER = ImageManager(BLOB_PATTERN,
                              control_freq=s["control_freq"],
                              static_dir='./static')
 
-# @app.route('/<path:path>')
-# def static_file(path):
-#     __import__('ipdb').set_trace()
-#     path = Path(path).name
-#     return app.send_static_file(path)
+
+def _cc(x):
+    return hex(255 - int(x, 16))[2:].zfill(2)
+
+
+def get_complement_color(c):
+    return f"{_cc(c[:2])}{_cc(c[2:4])}{_cc(c[4:])}"
+
+
+def get_spaced_colors(n):
+    max_value = 2**24 - 1
+    interval = int(max_value / n)
+    colors = []
+    for c in range(0, max_value, interval):
+        colors.append(
+            (hex(c)[2:].zfill(6), get_complement_color(hex(c)[2:].zfill(6))))
+
+    return colors
+
+
+def get_input_tags(name_val_pairs, sep=""):
+    """
+    Returns an html string containing `<input />` tags with equal-spaced
+    background color.
+
+    `name` and `value` field are filled according to `name_val_dict`
+
+    Each `<input />` is separated by `sep`.
+    """
+    out = ""
+    L = len(name_val_pairs)
+    colors = get_spaced_colors(L)
+    for i, (name, value) in enumerate(name_val_pairs):
+        out += f'<input style="background-color:#{colors[i][0]};color:#{colors[i][1]};" type="submit" name="{name}" value="{value}" />'
+
+    return out
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -46,13 +77,21 @@ def home():
         # blob = f'<img src="{blob_path}" height=200px/>'
         big_blob = f'<img src="{big_blob_path}" height=400px/>'
         partiture = f'<a href="{partiture_path}" target="_blank">Vedi la pagina originale</a>'
+
+        d = []
+        for v in s["annotation_values"].keys():
+            d.append((s["annotation_field"], v))
+        controllers = get_input_tags(d)
+
     except StopIteration:
-        blob = "<h2>Ended!</h2>"
-        big_blob = ""
+        big_blob = "<h2>Ended!</h2>"
         partiture = ""
         from_ = ""
         blob_id = -1
         is_control = False
+        controllers = ""
+        # <input style="background-color:#000095;" type="submit" name="{s['annotation_field']}" value="Rilevante" />
+        # <input style="background-color:#a66c00;" type="submit" name="{s['annotation_field']}" value="Irrilevante" />
 
     # return the page
     return f"""
@@ -70,8 +109,7 @@ def home():
                 <form action="" method="post">
                     <input type="hidden" type="submit" name="id" value="{blob_id}" />
                     <input type="hidden" type="submit" name="is_control" value="{is_control}" />
-                    <input style="background-color:#000095;" type="submit" name="{s['annotation_field']}" value="Rilevante" />
-                    <input style="background-color:#a66c00;" type="submit" name="{s['annotation_field']}" value="Irrilevante" />
+                    {controllers}
                 </form>
             </p>
             <p>
@@ -94,7 +132,15 @@ def home():
             }}
 
             body {{
+                display: table;
                 text-align: center;
+                height: 100%;
+                width: 100%;
+            }}
+
+            #content {{
+                display: table-cell;
+                vertical-align: middle;
             }}
 
         </style>
