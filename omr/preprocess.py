@@ -36,8 +36,7 @@ class Blob:
 def remove_staffs(self,
                   fname: Optional[Path] = None,
                   image: Optional[np.ndarray] = None):
-    """
-    Run the staff-removal algorithm. If `fname` is None, `image` is used
+    """ Run the staff-removal algorithm. If `fname` is None, `image` is used
     and an array is returned, otherise, `fname` is used and a filename is returned.
 
     For some reason, it doesn't work
@@ -161,6 +160,7 @@ def process(filename: Path,
 
         # storing into the json structure
         blob_obj.path = str(blob_path)
+        blob.parent = original_filename
         blob_obj.id = i
         if clustering:
             blob_obj.cluster = clusters[i]

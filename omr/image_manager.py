@@ -1,11 +1,11 @@
 import os
 import json
-import shutil
 import random
 from pathlib import Path
 
 import numpy as np
 from scipy.stats import spearmanr
+from skimage import io
 
 random.seed(1992)
 
@@ -103,7 +103,7 @@ class ImageManager:
                     self.normal_jsons[self.current_normal_idx:]):
                 if read_json_field(json_fname, self.annotation_field) is None:
                     FOUND = True
-                    self.current_normal_idx = idx
+                    self.current_normal_idx += idx
                     self.current_json = json_fname
                     break
             if not FOUND:
@@ -111,11 +111,19 @@ class ImageManager:
 
         # copy the image in a place visible to the server
         # if we want to show the original image, we should put it here
-        img_path = read_json_field(self.current_json, "path")
-        suffix = Path(img_path).suffix
-        served_img = self.static_dir / ("served_img" + suffix)
-        shutil.copyfile(img_path, served_img)
-        return str(served_img)
+        blob_obj = json.load(open(self.current_json))
+
+        original_image = str(Path(blob_obj["path"]).parent).replace(
+            '_nostaff', '')
+        original_image = io.imread(original_image + '.jpg')
+        section = original_image[blob_obj["x0"]:blob_obj["x1"],
+                                 blob_obj["y0"]:blob_obj["y1"]]
+        # original_image = io.imread(blob_obj["parent"])
+        # img_path = read_json_field(self.current_json, "path")
+        blob_jpg = self.static_dir / ("blob.jpg")
+
+        io.imsave(blob_jpg, section)
+        return str(blob_jpg)
 
     def save_annotation(self, annotation_value):
         if self.is_control:

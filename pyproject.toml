@@ -28,7 +28,7 @@ homepage = ""
 [tool.pdm.scripts]
 preprocess = {call = "omr.preprocess:main('config.toml')"}
 data_entry = {call = "omr.server:run()"}
-data_entry_debug = { cmd = "flask run -p 1992", env = { FLASK_APP="omr.server", FLASK_ENV="development" } }
+data_entry_debug = { cmd = "flask run -p 2022 -h 0.0.0.0", env = { FLASK_APP="omr.server", FLASK_ENV="development" } }
 
 [tool.pdm.dev-dependencies]
 ipython = [
