@@ -65,22 +65,52 @@ def get_input_tags(name_val_pairs, sep=""):
 def home():
     """
     Looks for the next image and returns the web-page. If the request is a
-    post, it also save the annotation
-    If `IMAGE_MANAGER` has a new rating, it also add a screen to communicate it.
+    post, it also saves the annotation
     """
     if request.method == 'POST':
         # save annotation
-        annotation_value = s["annotation_values"][request.form[
-            s["annotation_field"]]]
-        json_fn = ORIGINAL_IN / request.form["json_fn"]
-        is_control = request.form["is_control"] == "True"
-        unique_id = request.form["unique_id"]
-        IMAGE_MANAGER.save_annotation(json_fn, is_control, annotation_value,
-                                      unique_id)
+        save_annotation()
+    return make_page(None)
 
-    # get next image
+
+@app.route("/<int:idx>", methods=['GET'])
+def hist(idx):
+    """
+    Looks for the next image and returns the web-page. If the request is a
+    post, it also save the annotation
+    If `IMAGE_MANAGER` has a new rating, it also adds a screen to communicate
+    it.
+    """
+    return make_page(idx)
+
+
+def save_annotation():
+    annotation_value = s["annotation_values"][request.form[
+        s["annotation_field"]]]
+    json_fn = ORIGINAL_IN / request.form["json_fn"]
+    is_control = request.form["is_control"] == "True"
+    unique_id = request.form["unique_id"]
+    IMAGE_MANAGER.save_annotation(json_fn, is_control, annotation_value,
+                                  unique_id)
+
+
+def make_page(idx=None):
+    """
+    Asks an image to `IMAGE_MANAGER`. If `idx` is `None`, it uses the next
+    available image, otherwise it serves the image in the history at the `-idx`
+    index.
+
+    If `IMAGE_MANAGER` has a new rating, it also add a screen to communicate it.
+
+    The served page has:
+    * a title
+    * an image
+    * a form that submits to the home
+    * a link to the full page
+    * an optional div with the user rating
+    """
     try:
-        json_fn, is_control, unique_id, in_parts = next(IMAGE_MANAGER)
+        json_fn, is_control, unique_id, in_parts = IMAGE_MANAGER.ask(idx)
         # the json_fn shouldn't be an absolute path, otherwise the client could
         # overwrite any file in the system
         json_fn = Path(json_fn).relative_to(ORIGINAL_IN)
@@ -129,7 +159,7 @@ def home():
 
     # return the page
     return f"""
-        {rating_div} 
+        {rating_div}
         <div id="content">
             <h1>Archivio Ricordi ASL 2022</h1>
             <h3>La seguente immagine nel rettangolo rosso a quale categoria può essere attribuita?</h3>
@@ -141,7 +171,7 @@ def home():
             </p>
             <p>
 
-                <form action="" method="post">
+                <form action="/" method="post">
                     <input type="hidden" type="submit" name="json_fn" value="{json_fn}" />
                     <input type="hidden" type="submit" name="is_control" value="{is_control}" />
                     <input type="hidden" type="submit" name="unique_id" value="{unique_id}" />
