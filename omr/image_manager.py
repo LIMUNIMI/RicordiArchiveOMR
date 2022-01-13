@@ -32,6 +32,10 @@ def draw_rectangle(image, x0, y0, x1, y1, color=(255, 0, 0)):
     return image
 
 
+class EndedHistoryException(RuntimeError):
+    pass
+
+
 class ImageManager:
     """
     An iterator that provides the next image that must be annotated
@@ -75,6 +79,7 @@ class ImageManager:
         self.static_dir = Path(static_dir)
         self.static_dir.mkdir(exist_ok=True, parents=True)
         self.control_length = control_length
+        self.history = []
 
         # initializing annotator_json
         self.annotator_json_fn = annotator_json_fn
@@ -108,7 +113,7 @@ class ImageManager:
             if self.current_control_idx >= len(self.control_jsons):
                 self.current_control_idx = 0
             print(f"control_idx: {self.current_control_idx}")
-            current_json = self.control_jsons[self.current_control_idx]
+            blob_json = self.control_jsons[self.current_control_idx]
         else:
             is_control = False
             # looking for the first json not annotated
@@ -121,7 +126,7 @@ class ImageManager:
                     self.normal_jsons[self.current_normal_idx:]):
                 if read_json_field(json_fname, self.annotation_field) is None:
                     FOUND = True
-                    current_json = json_fname
+                    blob_json = json_fname
                     # update `current_normal_idx`
                     self.current_normal_idx += idx + 1
                     print(
@@ -130,10 +135,23 @@ class ImageManager:
                     break
             if not FOUND:
                 raise StopIteration
-        return current_json, is_control
+        return blob_json, is_control
 
-    def __next__(self):
+    def back(self, idx):
         """
+        Looks in the history and serves the image at the `-idx` index in the history
+        If idx > history length, raise EndedHistoryException
+        """
+
+        if idx > len(self.history):
+            raise EndedHistoryException()
+
+        return self.__serve_image(self.history[-idx])
+
+    def __serve_image(self, blob_json, is_control):
+        """
+        does everything to serve an image
+
         Returns:
         * annotation_json : the json path that should be annotated
         * is_control : if this json is one from control group
@@ -142,11 +160,12 @@ class ImageManager:
         * the list of directories that compose the original image (use it to
           retrieve author name and opera)
         """
-        current_json, is_control = self.__get_next_json()
+        # add arguments to the history
+        self.history.append((blob_json, is_control))
 
         # copy the image in a place visible to the server
         # if we want to show the original image, we should put it here
-        b = json.load(open(current_json))
+        b = json.load(open(blob_json))
 
         # original_image_path = Path(
         #     str(Path(b["path"]).parent).replace('_nostaff', '') + '.jpg')
@@ -177,8 +196,14 @@ class ImageManager:
         io.imsave(big_blob_jpg, big_section)
         io.imsave(partiture_jpg, partiture)
 
-        return current_json, is_control, unique_id, list(
+        return blob_json, is_control, unique_id, list(
             original_image_path.parts)
+
+    def __next__(self):
+        """
+        Returns `self.__serve_image(*self.__get_next_json())`
+        """
+        return self.__serve_image(*self.__get_next_json())
 
     def get_filenames(self, unique_id):
         big_blob_jpg = self.static_dir / (unique_id + "_big_blob.jpg")
