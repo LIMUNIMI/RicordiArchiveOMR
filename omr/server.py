@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import toml
+import numpy as np
 from flask import Flask, request
 
 from .image_manager import ImageManager
@@ -20,6 +21,7 @@ IMAGE_MANAGER = ImageManager(BLOB_PATTERN,
                              control_length=s["control_length"],
                              control_freq=s["control_freq"],
                              static_dir='./static')
+RNG = np.random.default_rng(1995)
 
 
 def _cc(x):
@@ -97,8 +99,26 @@ def home():
         controllers = ""
         unique_id = ""
 
+    if IMAGE_MANAGER.new_annotator_rating:
+        new_rating = IMAGE_MANAGER.annotator_rating
+        gif = RNG.choice(list(Path('./static').glob("*.gif")))
+        rating_div = f"""
+            <div class="rating" id="rating-background">
+                <div class="rating" id="rating-text">
+                    <img src="{gif}" height="400px"/>
+                    <h1>Abbiamo calcolato per te un nuovo punteggio!</h1>
+                    Abbiamo stimato che le tue annotazioni sono corrette al
+                    <h3>{new_rating}</h3>
+                    <button id="rating-button" onclick="document.getElementById('rating-background').hidden = true;">Continua</button>
+                </div>
+            </div>
+        """
+    else:
+        rating_div = ""
+
     # return the page
     return f"""
+        {rating_div} 
         <div id="content">
             <h1>Archivio Ricordi ASL 2022</h1>
             <h3>La seguente immagine nel rettangolo rosso rappresenta un segno musicale rilevante?</h3>
@@ -131,21 +151,39 @@ def home():
                 transition: 0.3s;
             }}
 
-            input:hover {{
+            input:hover, #rating-button:hover {{
                 opacity: 1;
                 cursor: pointer;
             }}
 
             body {{
-                display: table;
-                text-align: center;
+                position: relative;
                 height: 100%;
                 width: 100%;
             }}
 
-            #content {{
-                display: table-cell;
-                vertical-align: middle;
+            #content, .rating {{
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                text-align: center;
+            }}
+
+            #rating-background {{
+                z-index: 100;
+                background-color: rgba(54, 255, 104, 0.9);
+                width: 100%;
+                height: 100%;
+            }}
+
+            #rating-button {{
+                background: #ff8b46;
+                border: none;
+                width: 20%;
+                height: 50px;
+                color: #ffe4d5;
+                opacity: 1;
             }}
 
         </style>

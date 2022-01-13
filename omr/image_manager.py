@@ -1,6 +1,5 @@
 import os
 import json
-import random
 from pathlib import Path
 import uuid
 
@@ -8,7 +7,7 @@ import numpy as np
 from scipy.stats import spearmanr
 from skimage import io
 
-random.seed(1992)
+RNG = np.random.default_rng(1992)
 
 
 def read_json_field(fname, annotation_field):
@@ -51,9 +50,8 @@ class ImageManager:
 
         assert control_length or control_json_fn, "Please, provide control_length or control_json_fn and normal_json_fn"
         # shuffling blobs
-        full_json_list = [str(i) for i in blob_pattern]
-        random.seed(1992)
-        random.shuffle(full_json_list)  # in-place...
+        full_json_list = np.asarray([str(i) for i in blob_pattern])
+        RNG.shuffle(full_json_list)  # in-place...
 
         # splitting control set
         if os.path.exists(control_json_fn):
@@ -81,7 +79,8 @@ class ImageManager:
         # initializing annotator_json
         self.annotator_json_fn = annotator_json_fn
         self.annotator = annotator
-        self._annotator_rating = 'n.a.'
+        self._annotator_rating = []
+        self._new_annotator_rating = False
         if os.path.exists(annotator_json_fn):
             self.__init_annotator(annotator)
         else:
@@ -101,7 +100,7 @@ class ImageManager:
 
     def __get_next_json(self):
         # checking if we should provide a control json
-        if random.random() < 1 / self.control_freq:
+        if RNG.random() < 1 / self.control_freq:
             is_control = True
             # pick next control blob
             print(f"control_idx: {self.current_control_idx}")
@@ -117,7 +116,7 @@ class ImageManager:
             start = self.current_normal_idx
             # here and there, recompute `current_normal_idx` to annotate jsons
             # that may have been skipped
-            if random.random() < 0.001:
+            if RNG.random() < 0.001:
                 self.current_normal_idx = 0
             for idx, json_fname in enumerate(self.normal_jsons[start:]):
                 if read_json_field(json_fname, self.annotation_field) is None:
@@ -209,16 +208,31 @@ class ImageManager:
         self.cleaning(unique_id)
 
     @property
+    def new_annotator_rating(self):
+        """
+        A boolean property that is set to False after it is accessed
+        """
+        out = self._new_annotator_rating and len(self._annotator_rating) > 0
+        self._new_annotator_rating = False
+        return out
+
+    @property
     def annotator_rating(self):
-        return self._annotator_rating
+        """
+        The last value of self._annotator_rating
+        """
+        return self._annotator_rating[-1]
 
     @annotator_rating.setter
     def annotator_rating(self, x):
-        if x != self._annotator_rating:
-            self._annotator_rating = x
-            print(
-                f">>>>>>>>>>>>>>>>>>> New annotator rating: {x} <<<<<<<<<<<<<<<<<<"
-            )
+        """
+        Sets new_annotator_rating to True and prints it in the console
+        """
+        self._annotator_rating.append(x)
+        self._new_annotator_rating = True
+        print(
+            f">>>>>>>>>>>>>>>>>>> New annotator rating: {x} <<<<<<<<<<<<<<<<<<"
+        )
 
     def update_rating(self, data, annotator):
         """
@@ -228,7 +242,6 @@ class ImageManager:
         MUST BE REVISED!
         """
         if annotator not in data:
-            self.annotator_rating = "n.a."
             return
         # computing self-correlation
         L = min(len(i) for i in data[annotator])
@@ -240,7 +253,6 @@ class ImageManager:
             else:
                 self_r = r[np.tril_indices(r.shape[0])].mean()
         else:
-            self.annotator_rating = "n.a."
             return
 
         annotator_indices = {}
