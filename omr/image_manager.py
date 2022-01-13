@@ -90,8 +90,6 @@ class ImageManager:
 
         self.is_control = False
         self.enlarge = enlarge
-        # setting the internal _idx to 0
-        self._idx = 0
 
     def __init_annotator(self, annotator):
         annotator_json = json.load(open(self.annotator_json_fn))
@@ -101,16 +99,7 @@ class ImageManager:
         json.dump(annotator_json, open(self.annotator_json_fn, "w"))
         self.update_rating(annotator_json, self.annotator)
 
-    def __next__(self):
-        """
-        Returns:
-        * annotation_json : the json path that should be annotated
-        * is_control : if this json is one from control group
-        * the unique id used to generate the served images (use it in
-          `get_filenames` to get the path that should be servedunique_id
-        * the list of directories that compose the original image (use it to
-          retrieve author name and opera)
-        """
+    def __get_next_json(self):
         # checking if we should provide a control json
         if random.random() < 1 / self.control_freq:
             is_control = True
@@ -139,6 +128,19 @@ class ImageManager:
                     break
             if not FOUND:
                 raise StopIteration
+        return current_json, is_control
+
+    def __next__(self):
+        """
+        Returns:
+        * annotation_json : the json path that should be annotated
+        * is_control : if this json is one from control group
+        * the unique id used to generate the served images (use it in
+          `get_filenames` to get the path that should be servedunique_id
+        * the list of directories that compose the original image (use it to
+          retrieve author name and opera)
+        """
+        current_json, is_control = self.__get_next_json()
 
         # copy the image in a place visible to the server
         # if we want to show the original image, we should put it here
@@ -203,8 +205,7 @@ class ImageManager:
             print(
                 f"Current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
             )
-        # resetting the internal _idx
-        self._idx = 0
+
         self.cleaning(unique_id)
 
     @property
