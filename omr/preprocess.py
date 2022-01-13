@@ -160,7 +160,7 @@ def process(filename: Path,
 
         # storing into the json structure
         blob_obj.path = str(blob_path)
-        blob.parent = original_filename
+        blob_obj.parent = str(original_filename)
         blob_obj.id = i
         if clustering:
             blob_obj.cluster = clusters[i]

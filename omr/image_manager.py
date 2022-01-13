@@ -133,21 +133,23 @@ class ImageManager:
         # if we want to show the original image, we should put it here
         b = json.load(open(self.current_json))
 
-        original_image_path = Path(
-            str(Path(b["path"]).parent).replace('_nostaff', '') + '.jpg')
-        # original_image_path = blob_obj["parent"]
+        # original_image_path = Path(
+        #     str(Path(b["path"]).parent).replace('_nostaff', '') + '.jpg')
+        original_image_path = Path(b["parent"].replace('_nostaff', ''))
 
         # sectioning the blob
         original_image = io.imread(original_image_path)
         # section = original_image[b["x0"]:b["x1"], b["y0"]:b["y1"]]
-        x_max = original_image.shape[0] - 1
-        y_max = original_image.shape[1] - 1
+        x_max = original_image.shape[0]
+        y_max = original_image.shape[1]
         e = self.enlarge
-        big_section = original_image[max(0, b["x0"] -
-                                         e):min(x_max, b["x1"] + e),
-                                     max(0, b["y0"] -
-                                         e):min(y_max, b["y1"] + e)]
-        big_section = draw_rectangle(big_section.copy(), e, e, -e, -e)
+        x0 = max(0, b["x0"] - e)
+        x1 = min(x_max, b["x1"] + e)
+        y0 = max(0, b["y0"] - e)
+        y1 = min(y_max, b["y1"] + e)
+        big_section = original_image[x0:x1, y0:y1]
+        big_section = draw_rectangle(big_section.copy(), b["x0"] - x0,
+                                     b["y0"] - y0, b["x1"] - x1, b["y1"] - y1)
         # drawing a rectangle in the original image
         partiture = draw_rectangle(original_image.copy(), b["x0"], b["y0"],
                                    b["x1"], b["y1"])
@@ -181,6 +183,9 @@ class ImageManager:
             json.dump(json_data, open(json_fn, "w"))
             # increase the idx of the corresponding _idx
             self.current_normal_idx += self._idx
+            print(
+                f"Current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
+            )
         # resetting the internal _idx
         self._idx = 0
 
@@ -209,7 +214,7 @@ class ImageManager:
         if L > 1:
             self_data = [i[:L] for i in data[annotator]]
             r, _ = spearmanr(self_data, self_data, axis=0)
-            if np.isnan(r):
+            if np.any(np.isnan(r)):
                 self_r = 1.0
             else:
                 self_r = r[np.tril_indices(r.shape[0])].mean()
@@ -234,6 +239,6 @@ class ImageManager:
         # annotator
         inter_r, _ = spearmanr(np.mean(self_data, axis=1),
                                np.mean(inter_data, axis=0))
-        if np.isnan(inter_r):
+        if np.any(np.isnan(inter_r)):
             inter_r = 1.0
         self.annotator_rating = f"{round((self_r + inter_r) / 2 * 100)}%"

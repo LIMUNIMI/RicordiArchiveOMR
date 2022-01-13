@@ -30,8 +30,8 @@ def get_complement_color(c):
 
 
 def get_spaced_colors(n):
-    max_value = 2**24 - 1
-    interval = int(max_value / n)
+    max_value = 2**8
+    interval = round(max_value / n)
     colors = []
     for c in range(0, max_value, interval):
         colors.append(
@@ -90,8 +90,6 @@ def home():
         blob_id = -1
         is_control = False
         controllers = ""
-        # <input style="background-color:#000095;" type="submit" name="{s['annotation_field']}" value="Rilevante" />
-        # <input style="background-color:#a66c00;" type="submit" name="{s['annotation_field']}" value="Irrilevante" />
 
     # return the page
     return f"""
