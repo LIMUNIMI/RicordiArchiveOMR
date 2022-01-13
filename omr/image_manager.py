@@ -123,7 +123,7 @@ class ImageManager:
                     FOUND = True
                     current_json = json_fname
                     # update `current_normal_idx`
-                    self.current_normal_idx += idx
+                    self.current_normal_idx += idx + 1
                     print(
                         f"Current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
                     )
