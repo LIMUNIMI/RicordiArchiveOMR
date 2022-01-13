@@ -104,6 +104,9 @@ class ImageManager:
         self.update_rating(annotator_json, self.annotator)
 
     def __get_next_json(self):
+        """
+        Get the next json from normal or control group and adds its info to the history
+        """
         # checking if we should provide a control json
         if RNG.random() < 1 / self.control_freq:
             is_control = True
@@ -135,18 +138,9 @@ class ImageManager:
                     break
             if not FOUND:
                 raise StopIteration
+        # add arguments to the history
+        self.history.append((blob_json, is_control))
         return blob_json, is_control
-
-    def back(self, idx):
-        """
-        Looks in the history and serves the image at the `-idx` index in the history
-        If idx > history length, raise EndedHistoryException
-        """
-
-        if idx > len(self.history):
-            raise EndedHistoryException()
-
-        return self.__serve_image(self.history[-idx])
 
     def __serve_image(self, blob_json, is_control):
         """
@@ -160,8 +154,6 @@ class ImageManager:
         * the list of directories that compose the original image (use it to
           retrieve author name and opera)
         """
-        # add arguments to the history
-        self.history.append((blob_json, is_control))
 
         # copy the image in a place visible to the server
         # if we want to show the original image, we should put it here
@@ -204,6 +196,27 @@ class ImageManager:
         Returns `self.__serve_image(*self.__get_next_json())`
         """
         return self.__serve_image(*self.__get_next_json())
+
+    def __back__(self, idx):
+        """
+        Looks in the history and serves the image at the `-idx` index in the history
+        If idx > history length, raise EndedHistoryException
+        """
+
+        if idx > len(self.history):
+            raise EndedHistoryException()
+
+        return self.__serve_image(*self.history[-idx])
+
+    def ask(self, idx):
+        """
+        A proxy method for `__next__` and `__back__`. If `idx` is `None`,
+        `__next__` is called, otherwise it calls `__back__`
+        """
+        if idx is None:
+            return self.__next__()
+        else:
+            return self.__back__(idx)
 
     def get_filenames(self, unique_id):
         big_blob_jpg = self.static_dir / (unique_id + "_big_blob.jpg")
