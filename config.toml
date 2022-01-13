@@ -5,9 +5,6 @@
   blob_dir = "/datasets/ricordi/"
 
 [data_entry]
-  # the following are here for future reference, but for now the page template
-  # is hard-coded in server.py, so values should change accordingly
-annotation_values = {BordoPagina = 0, Cancellatura = 1, Sbavatura = 2, TestoStampato = 3, TestoScritto = 4, Pausa = 5, NotaSingola = 6, NoteMultiple = 7, AccordoSingolo = 8, AccordiMultipli = 9, Alterazione = 10, Chiave = 11, Abbellimento = 12, Dinamiche = 13, Altro = 14}
   # the annotation field that will be updated in the json
   annotation_field = "debug"
   # the number of blobs in the control group
@@ -18,3 +15,21 @@ annotation_values = {BordoPagina = 0, Cancellatura = 1, Sbavatura = 2, TestoStam
   port = 1992
   # the name that will be used for the control json
   annotator = "tenca1"
+
+[data_entry.annotation_values] 
+  # the buttons with their annotation value
+  "Bordo Pagina"= 0
+  Cancellatura = 1
+  Sbavatura = 2
+  "Testo Stampato" = 3
+  "Testo Manoscritto" = 4
+  "Pausa (intera o quasi)" = 5
+  "Nota Singola (con almeno la testa)" = 6
+  "Note Multiple (con almeno la testa)" = 7
+  "Accordo Singolo (con almeno le teste)" = 8
+  "Accordi Multipli (con almeno le teste)" = 9
+  "Alterazione (intera o quasi)" = 10
+  "Chiave (intera o quasi)" = 11
+  "Abbellimento (intero o quasi)" = 12
+  "Più categorie" = 13
+  Altro = 14
