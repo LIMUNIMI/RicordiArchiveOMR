@@ -100,6 +100,8 @@ def home():
         unique_id = ""
 
     if IMAGE_MANAGER.new_annotator_rating:
+        annotated = IMAGE_MANAGER.current_normal_idx + 1
+        ratio = annotated / len(IMAGE_MANAGER.normal_jsons) * 100
         new_rating = IMAGE_MANAGER.annotator_rating
         gif = RNG.choice(list(Path('./static').glob("*.gif")))
         rating_div = f"""
@@ -109,6 +111,10 @@ def home():
                     <h1>Abbiamo calcolato per te un nuovo punteggio!</h1>
                     Abbiamo stimato che le tue annotazioni sono corrette al
                     <h3>{new_rating}</h3>
+                    Hai annotato il
+                    <h3>{ratio}%</h3>
+                    delle immagini ({annotated} immagini).
+                    <br/>
                     <button id="rating-button" onclick="document.getElementById('rating-background').hidden = true;">Continua</button>
                 </div>
             </div>

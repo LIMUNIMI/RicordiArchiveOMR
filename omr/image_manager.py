@@ -63,8 +63,8 @@ class ImageManager:
             self.normal_jsons = full_json_list[control_length:]
             json.dump(
                 {
-                    'control': self.control_jsons,
-                    'normal': self.normal_jsons
+                    'control': self.control_jsons.tolist(),
+                    'normal': self.normal_jsons.tolist()
                 }, open(control_json_fn, "w"))
 
         # initializing fields
@@ -103,27 +103,30 @@ class ImageManager:
         if RNG.random() < 1 / self.control_freq:
             is_control = True
             # pick next control blob
-            print(f"control_idx: {self.current_control_idx}")
-            if self.current_control_idx >= len(self.control_jsons):
-                self.current_control_idx = 0
-            current_json = self.control_jsons[self.current_control_idx]
             # update `current_control_idx`
             self.current_control_idx += 1
+            if self.current_control_idx >= len(self.control_jsons):
+                self.current_control_idx = 0
+            print(f"control_idx: {self.current_control_idx}")
+            current_json = self.control_jsons[self.current_control_idx]
         else:
             is_control = False
             # looking for the first json not annotated
             FOUND = False
-            start = self.current_normal_idx
             # here and there, recompute `current_normal_idx` to annotate jsons
             # that may have been skipped
             if RNG.random() < 0.001:
                 self.current_normal_idx = 0
-            for idx, json_fname in enumerate(self.normal_jsons[start:]):
+            for idx, json_fname in enumerate(
+                    self.normal_jsons[self.current_normal_idx:]):
                 if read_json_field(json_fname, self.annotation_field) is None:
                     FOUND = True
                     current_json = json_fname
                     # update `current_normal_idx`
                     self.current_normal_idx += idx
+                    print(
+                        f"Current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
+                    )
                     break
             if not FOUND:
                 raise StopIteration
@@ -201,9 +204,6 @@ class ImageManager:
             json_data = json.load(open(json_fn, "r"))
             json_data[self.annotation_field] = annotation_value
             json.dump(json_data, open(json_fn, "w"))
-            print(
-                f"Current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
-            )
 
         self.cleaning(unique_id)
 
