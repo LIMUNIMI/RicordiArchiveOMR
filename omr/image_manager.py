@@ -2,6 +2,7 @@ import os
 import json
 import random
 from pathlib import Path
+import uuid
 
 import numpy as np
 from scipy.stats import spearmanr
@@ -102,7 +103,13 @@ class ImageManager:
 
     def __next__(self):
         """
-        returns the next image path that should be annotated
+        Returns:
+        * annotation_json : the json path that should be annotated
+        * is_control : if this json is one from control group
+        * the unique id used to generate the served images (use it in
+          `get_filenames` to get the path that should be servedunique_id
+        * the list of directories that compose the original image (use it to
+          retrieve author name and opera)
         """
         # checking if we should provide a control json
         if random.random() < 1 / self.control_freq:
@@ -111,27 +118,31 @@ class ImageManager:
             print(f"control_idx: {self.current_control_idx}")
             if self.current_control_idx >= len(self.control_jsons):
                 self.current_control_idx = 0
-            self.current_json = self.control_jsons[self.current_control_idx]
-            # store idx to update it when annotation is saved
-            self._idx = 1
+            current_json = self.control_jsons[self.current_control_idx]
+            # update `current_control_idx`
+            self.current_control_idx += 1
         else:
             is_control = False
             # looking for the first json not annotated
             FOUND = False
-            for idx, json_fname in enumerate(
-                    self.normal_jsons[self.current_normal_idx:]):
+            start = self.current_normal_idx
+            # here and there, recompute `current_normal_idx` to annotate jsons
+            # that may have been skipped
+            if random.random() < 0.001:
+                self.current_normal_idx = 0
+            for idx, json_fname in enumerate(self.normal_jsons[start:]):
                 if read_json_field(json_fname, self.annotation_field) is None:
                     FOUND = True
-                    self.current_json = json_fname
-                    # store idx to update it when annotation is saved
-                    self._idx = idx
+                    current_json = json_fname
+                    # update `current_normal_idx`
+                    self.current_normal_idx += idx
                     break
             if not FOUND:
                 raise StopIteration
 
         # copy the image in a place visible to the server
         # if we want to show the original image, we should put it here
-        b = json.load(open(self.current_json))
+        b = json.load(open(current_json))
 
         # original_image_path = Path(
         #     str(Path(b["path"]).parent).replace('_nostaff', '') + '.jpg')
@@ -154,18 +165,27 @@ class ImageManager:
         partiture = draw_rectangle(original_image.copy(), b["x0"], b["y0"],
                                    b["x1"], b["y1"])
 
-        # blob_jpg = self.static_dir / "blob.jpg"
-        big_blob_jpg = self.static_dir / "big_blob.jpg"
-        partiture_jpg = self.static_dir / "partiture.jpg"
+        unique_id = str(uuid.uuid4())
+        big_blob_jpg, partiture_jpg = self.get_filenames(unique_id)
 
         # io.imsave(blob_jpg, section)
         io.imsave(big_blob_jpg, big_section)
         io.imsave(partiture_jpg, partiture)
 
-        return self.current_json, is_control, str(big_blob_jpg), str(
-            partiture_jpg), list(original_image_path.parts)
+        return current_json, is_control, unique_id, list(
+            original_image_path.parts)
 
-    def save_annotation(self, json_fn, is_control, annotation_value):
+    def get_filenames(self, unique_id):
+        big_blob_jpg = self.static_dir / (unique_id + "_big_blob.jpg")
+        partiture_jpg = self.static_dir / (unique_id + "_partiture.jpg")
+        return big_blob_jpg, partiture_jpg
+
+    def cleaning(self, unique_id):
+        for f in self.get_filenames(unique_id):
+            f.unlink(missing_ok=True)
+
+    def save_annotation(self, json_fn, is_control, annotation_value,
+                        unique_id):
         if is_control:
             # this was a control blob
             annotator_json = json.load(open(self.annotator_json_fn))
@@ -176,18 +196,16 @@ class ImageManager:
                 annotation_value)
             self.update_rating(annotator_json, self.annotator)
             json.dump(annotator_json, open(self.annotator_json_fn, "w"))
-            self.current_control_idx += self._idx
         else:
             json_data = json.load(open(json_fn, "r"))
             json_data[self.annotation_field] = annotation_value
             json.dump(json_data, open(json_fn, "w"))
-            # increase the idx of the corresponding _idx
-            self.current_normal_idx += self._idx
             print(
                 f"Current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
             )
         # resetting the internal _idx
         self._idx = 0
+        self.cleaning(unique_id)
 
     @property
     def annotator_rating(self):
@@ -197,7 +215,9 @@ class ImageManager:
     def annotator_rating(self, x):
         if x != self._annotator_rating:
             self._annotator_rating = x
-            print(f"New annotator rating: {x}")
+            print(
+                f">>>>>>>>>>>>>>>>>>> New annotator rating: {x} <<<<<<<<<<<<<<<<<<"
+            )
 
     def update_rating(self, data, annotator):
         """

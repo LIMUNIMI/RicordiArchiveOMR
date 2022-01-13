@@ -12,7 +12,8 @@ config = toml.load(open('./config.toml'))
 s = config['data_entry']
 BLOB_PATTERN = Path(
     config['preprocessing']['blob_dir']).glob("**/*_blob*.json")
-ORIGINAL_IN_PARTS = len(Path(config['preprocessing']['input_dir']).parts)
+ORIGINAL_IN = Path(config['preprocessing']['input_dir'])
+ORIGINAL_IN_PARTS = len(ORIGINAL_IN.parts)
 IMAGE_MANAGER = ImageManager(BLOB_PATTERN,
                              s["annotation_field"],
                              s["annotator"],
@@ -64,17 +65,21 @@ def home():
         # save annotation
         annotation_value = s["annotation_values"][request.form[
             s["annotation_field"]]]
-        id = request.form["id"]
+        json_fn = ORIGINAL_IN / request.form["json_fn"]
         is_control = request.form["is_control"] == "True"
-        IMAGE_MANAGER.save_annotation(id, is_control, annotation_value)
+        unique_id = request.form["unique_id"]
+        IMAGE_MANAGER.save_annotation(json_fn, is_control, annotation_value,
+                                      unique_id)
 
     # get next image
     try:
-        blob_id, is_control, big_blob_path, partiture_path, in_parts = next(
-            IMAGE_MANAGER)
+        json_fn, is_control, unique_id, in_parts = next(IMAGE_MANAGER)
+        # the json_fn shouldn't be an absolute path, otherwise the client could
+        # overwrite any file in the system
+        json_fn = Path(json_fn).relative_to(ORIGINAL_IN)
         in_parts = in_parts[ORIGINAL_IN_PARTS:ORIGINAL_IN_PARTS + 2]
         from_ = f"This image is from <i><b>{in_parts[0]}</b>, {in_parts[1]}</i>"
-        # blob = f'<img src="{blob_path}" height=200px/>'
+        big_blob_path, partiture_path = IMAGE_MANAGER.get_filenames(unique_id)
         big_blob = f'<img src="{big_blob_path}" height=400px/>'
         partiture = f'<a href="{partiture_path}" target="_blank">Vedi la pagina originale</a>'
 
@@ -87,9 +92,10 @@ def home():
         big_blob = "<h2>Ended!</h2>"
         partiture = ""
         from_ = ""
-        blob_id = -1
+        json_fn = -1
         is_control = False
         controllers = ""
+        unique_id = ""
 
     # return the page
     return f"""
@@ -105,8 +111,9 @@ def home():
             <p>
 
                 <form action="" method="post">
-                    <input type="hidden" type="submit" name="id" value="{blob_id}" />
+                    <input type="hidden" type="submit" name="json_fn" value="{json_fn}" />
                     <input type="hidden" type="submit" name="is_control" value="{is_control}" />
+                    <input type="hidden" type="submit" name="unique_id" value="{unique_id}" />
                     {controllers}
                 </form>
             </p>
