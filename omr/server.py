@@ -56,13 +56,18 @@ def get_input_tags(name_val_pairs, sep=""):
     L = len(name_val_pairs)
     colors = get_spaced_colors(L)
     for i, (name, value) in enumerate(name_val_pairs):
-        out += f'<input style="background-color:#{colors[i][0]};color:#{colors[i][1]};" type="submit" name="{name}" value="{value}" />'
+        out += f'<input style="background-color:#{colors[i][0]};color:#{colors[i][1]};" type="submit" name="{name}" value="{value}" />' + sep
 
     return out
 
 
 @app.route("/", methods=['GET', 'POST'])
 def home():
+    """
+    Looks for the next image and returns the web-page. If the request is a
+    post, it also save the annotation
+    If `IMAGE_MANAGER` has a new rating, it also add a screen to communicate it.
+    """
     if request.method == 'POST':
         # save annotation
         annotation_value = s["annotation_values"][request.form[
@@ -80,7 +85,7 @@ def home():
         # overwrite any file in the system
         json_fn = Path(json_fn).relative_to(ORIGINAL_IN)
         in_parts = in_parts[ORIGINAL_IN_PARTS:ORIGINAL_IN_PARTS + 2]
-        from_ = f"This image is from <i><b>{in_parts[0]}</b>, {in_parts[1]}</i>"
+        from_ = f"Questa immagine proviene da <i><b>{in_parts[0]}</b>, {in_parts[1]}</i>"
         big_blob_path, partiture_path = IMAGE_MANAGER.get_filenames(unique_id)
         big_blob = f'<img src="{big_blob_path}" height=400px/>'
         partiture = f'<a href="{partiture_path}" target="_blank">Vedi la pagina originale</a>'
@@ -127,7 +132,7 @@ def home():
         {rating_div} 
         <div id="content">
             <h1>Archivio Ricordi ASL 2022</h1>
-            <h3>La seguente immagine nel rettangolo rosso rappresenta un segno musicale rilevante?</h3>
+            <h3>La seguente immagine nel rettangolo rosso a quale categoria può essere attribuita?</h3>
             <p>
                 {from_}
             </p>
@@ -150,7 +155,7 @@ def home():
         <style>
             input {{
                 color: white;
-                border: none;
+                border: 1px #0264fc solid;
                 height: 50px;
                 padding: 5px;
                 opacity: 0.6;
@@ -190,6 +195,15 @@ def home():
                 height: 50px;
                 color: #ffe4d5;
                 opacity: 1;
+            }}
+
+            form {{
+                top: 0;
+                position: fixed;
+                left: -45%;
+                width: 0px;
+                margin: 0px;
+                padding: 0px;
             }}
 
         </style>
