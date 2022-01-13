@@ -4,7 +4,7 @@ import toml
 import numpy as np
 from flask import Flask, request
 
-from .image_manager import ImageManager
+from .image_manager import ImageManager, EndedHistoryException
 
 app = Flask(__name__, static_url_path='/static', root_path='.')
 
@@ -109,6 +109,12 @@ def make_page(idx=None):
     * a link to the full page
     * an optional div with the user rating
     """
+    if idx is None or idx <= 1:
+        arrow_left = '<a href="/2"><i class="arrow left"></i></a>'
+        arrow_right = '<a style="visibility:hidden;"><i class="arrow right"></i></a>'
+    else:
+        arrow_left = f'<a href="/{idx+1}"><i class="arrow left"></i></a>'
+        arrow_right = f'<a href="/{idx-1}"><i class="arrow right"></i></a>'
     try:
         json_fn, is_control, unique_id, in_parts = IMAGE_MANAGER.ask(idx)
         # the json_fn shouldn't be an absolute path, otherwise the client could
@@ -125,8 +131,16 @@ def make_page(idx=None):
             d.append((s["annotation_field"], v))
         controllers = get_input_tags(d)
 
-    except StopIteration:
-        big_blob = "<h2>Ended!</h2>"
+    except Exception as e:
+        if type(e) is StopIteration:
+            big_blob = "<h2>L'archivio Ricordi è finito!</h2>"
+            arrow_right = '<a style="visibility:hidden;"><i class="arrow right"></i></a>'
+        elif type(e) is EndedHistoryException:
+            big_blob = "<h2>È finita la storia delle immagini!</h2>"
+            arrow_left = '<a style="visibility:hidden;"><i class="arrow left"></i></a>'
+        else:
+            raise e
+
         partiture = ""
         from_ = ""
         json_fn = -1
@@ -170,18 +184,19 @@ def make_page(idx=None):
                 {big_blob}
             </p>
             <p>
-
-                <form action="/" method="post">
-                    <input type="hidden" type="submit" name="json_fn" value="{json_fn}" />
-                    <input type="hidden" type="submit" name="is_control" value="{is_control}" />
-                    <input type="hidden" type="submit" name="unique_id" value="{unique_id}" />
-                    {controllers}
-                </form>
-            </p>
-            <p>
                 {partiture}
             </p>
         </div>
+        <div id="arrows">
+            {arrow_left}
+            {arrow_right}
+        </div>
+        <form action="/" method="post">
+            <input type="hidden" type="submit" name="json_fn" value="{json_fn}" />
+            <input type="hidden" type="submit" name="is_control" value="{is_control}" />
+            <input type="hidden" type="submit" name="unique_id" value="{unique_id}" />
+            {controllers}
+        </form>
         <style>
             input {{
                 color: white;
@@ -228,12 +243,39 @@ def make_page(idx=None):
             }}
 
             form {{
-                top: 0;
                 position: fixed;
-                left: -45%;
+                top: 50%;
+                left: 5%;
                 width: 0px;
                 margin: 0px;
                 padding: 0px;
+                transform: translate(0%, -50%);
+            }}
+
+            #arrows {{
+                position: fixed;
+                top: 50%;
+                right: 7.5%;
+                transform: translate(-50%, 0%);
+            }}
+
+            .arrow {{
+                border: solid black;
+                border-width: 0 20px 20px 0;
+                display: inline-block;
+                padding: 30px;
+                margin-bottom: 20px;
+                margin-top: 20px;
+            }}
+
+            .right {{
+                transform: rotate(-45deg);
+                -webkit-transform: rotate(-45deg);
+            }}
+
+            .left {{
+                transform: rotate(135deg);
+                -webkit-transform: rotate(135deg);
             }}
 
         </style>
