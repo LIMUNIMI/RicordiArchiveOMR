@@ -242,6 +242,7 @@ class ImageManager:
         else:
             json_data = json.load(open(json_fn, "r"))
             json_data[self.annotation_field] = annotation_value
+            json_data['annotator'] = self.annotator
             json.dump(json_data, open(json_fn, "w"))
 
         self.cleaning(unique_id)
