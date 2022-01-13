@@ -164,7 +164,8 @@ class ImageManager:
         y1 = min(y_max, b["y1"] + e)
         big_section = original_image[x0:x1, y0:y1]
         big_section = draw_rectangle(big_section.copy(), b["x0"] - x0,
-                                     b["y0"] - y0, b["x1"] - x1, b["y1"] - y1)
+                                     b["y0"] - y0, b["x1"] - x1 or x_max,
+                                     b["y1"] - y1 or y_max)
         # drawing a rectangle in the original image
         partiture = draw_rectangle(original_image.copy(), b["x0"], b["y0"],
                                    b["x1"], b["y1"])
