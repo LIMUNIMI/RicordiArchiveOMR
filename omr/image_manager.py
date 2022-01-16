@@ -2,12 +2,35 @@ import os
 import json
 from pathlib import Path
 import uuid
+import logging
 
 import numpy as np
 from scipy.stats import spearmanr
 from skimage import io
 
 RNG = np.random.default_rng(1992)
+
+LOGGER = logging.getLogger(__name__)
+
+
+def setup_logger(logger):
+    logger.setLevel(logging.INFO)
+
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    filehandler = logging.FileHandler("server.log")
+    filehandler.setLevel(logging.INFO)
+    filehandler.setFormatter(formatter)
+    logger.addHandler(filehandler)
+
+    iohandler = logging.StreamHandler()
+    iohandler.setLevel(logging.INFO)
+    iohandler.setFormatter(formatter)
+    logger.addHandler(iohandler)
+
+
+setup_logger(LOGGER)
 
 
 def read_json_field(fname, annotation_field):
@@ -115,7 +138,7 @@ class ImageManager:
             self.current_control_idx += 1
             if self.current_control_idx >= len(self.control_jsons):
                 self.current_control_idx = 0
-            print(f"control_idx: {self.current_control_idx}")
+            LOGGER.info(f"control_idx: {self.current_control_idx}")
             blob_json = self.control_jsons[self.current_control_idx]
         else:
             is_control = False
@@ -132,7 +155,7 @@ class ImageManager:
                     blob_json = json_fname
                     # update `current_normal_idx`
                     self.current_normal_idx += idx + 1
-                    print(
+                    LOGGER.info(
                         f"Current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
                     )
                     break
@@ -270,7 +293,7 @@ class ImageManager:
         """
         self._annotator_rating.append(x)
         self._new_annotator_rating = True
-        print(
+        LOGGER.info(
             f">>>>>>>>>>>>>>>>>>> New annotator rating: {x} <<<<<<<<<<<<<<<<<<"
         )
 
