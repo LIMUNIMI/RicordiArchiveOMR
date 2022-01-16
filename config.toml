@@ -6,9 +6,9 @@
 
 [data_entry]
   # the annotation field that will be updated in the json
-  annotation_field = "debug"
+  annotation_field = "annotazione1"
   # the number of blobs in the control group
-  control_length = 1000
+  control_length = 500
   # how many blobs should pass before one from the control group is picked (on average)
   control_freq = 5
   # port for the app
@@ -28,8 +28,10 @@
   "Note Multiple (con almeno la testa)" = 7
   "Accordo Singolo (con almeno le teste)" = 8
   "Accordi Multipli (con almeno le teste)" = 9
-  "Alterazione (intera o quasi)" = 10
-  "Chiave (intera o quasi)" = 11
-  "Abbellimento (intero o quasi)" = 12
-  "Più categorie" = 13
-  Altro = 14
+  "Alterazione/i (intera/e o quasi)" = 10
+  "Chiave/i (intera/i o quasi)" = 11
+  "Abbellimento/i (intero/i o quasi)" = 12
+  "Più categorie (con almeno un segno musicale)" = 14
+  "Più categorie (senza segni musicali)" = 15
+  "Altro (con almeno un segno musicale)" = 16
+  "Altro (senza segni musicali)" = 17
