@@ -282,20 +282,25 @@ class ImageManager:
     @property
     def annotator_rating(self):
         """
-        The last value of self._annotator_rating
+        The last value of self._annotator_rating is it exists, otherwise None
         """
-        return self._annotator_rating[-1]
+        if len(self._annotator_rating) > 0:
+            return self._annotator_rating[-1]
+        else:
+            return None
 
     @annotator_rating.setter
     def annotator_rating(self, x):
         """
-        Sets new_annotator_rating to True and prints it in the console
+        If `x` is different from `self.annotator_rating`, sets
+        `self._new_annotator_rating` to True and prints it in the console
         """
-        self._annotator_rating.append(x)
-        self._new_annotator_rating = True
-        LOGGER.info(
-            f">>>>>>>>>>>>>>>>>>> New annotator rating: {x} <<<<<<<<<<<<<<<<<<"
-        )
+        if x != self.annotator_rating:
+            self._annotator_rating.append(x)
+            self._new_annotator_rating = True
+            LOGGER.info(
+                f">>>>>>>>>>>>>>>>>>> New annotator rating: {x} <<<<<<<<<<<<<<<<<<"
+            )
 
     def update_rating(self, data, annotator):
         """
