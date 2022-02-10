@@ -65,7 +65,7 @@ class ImageManager:
     """
 
     def __init__(self,
-                 blob_pattern,
+                 blob_jsons,
                  annotation_field,
                  annotator,
                  control_length=100,
@@ -77,7 +77,7 @@ class ImageManager:
 
         assert control_length or control_json_fn, "Please, provide control_length or control_json_fn and normal_json_fn"
         # shuffling blobs
-        full_json_list = np.asarray([str(i) for i in blob_pattern])
+        full_json_list = np.asarray([str(i) for i in blob_jsons])
         RNG.shuffle(full_json_list)  # in-place...
 
         # splitting control set
@@ -147,6 +147,7 @@ class ImageManager:
             # here and there, recompute `current_normal_idx` to annotate jsons
             # that may have been skipped
             if RNG.random() < 0.001:
+                LOGGER.info("resetting current_normal_idx to 0")
                 self.current_normal_idx = 0
             for idx, json_fname in enumerate(
                     self.normal_jsons[self.current_normal_idx:]):
@@ -156,8 +157,9 @@ class ImageManager:
                     # update `current_normal_idx`
                     self.current_normal_idx += idx + 1
                     LOGGER.info(
-                        f"Current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
+                        f"current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
                     )
+                    LOGGER.info(f"current_normal_json: {blob_json}")
                     break
             if not FOUND:
                 raise StopIteration
@@ -300,6 +302,10 @@ class ImageManager:
             self._new_annotator_rating = True
             LOGGER.info(
                 f">>>>>>>>>>>>>>>>>>> New annotator rating: {x} <<<<<<<<<<<<<<<<<<"
+            )
+        else:
+            LOGGER.info(
+                f"annotator rating not changed: {x}, previous was {self.annotator_rating}"
             )
 
     def update_rating(self, data, annotator):

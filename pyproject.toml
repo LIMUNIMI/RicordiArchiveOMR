@@ -29,6 +29,7 @@ homepage = ""
 preprocess = {call = "omr.preprocess:main('config.toml')"}
 data_entry = {call = "omr.server:run()"}
 data_entry_debug = { cmd = "flask run -p 2022", env = { FLASK_APP="omr.server", FLASK_ENV="development" } }
+check_blob_jsons = {call = "omr.check:check_blob_jsons()"}
 
 [tool.pdm.dev-dependencies]
 ipython = [

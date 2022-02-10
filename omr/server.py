@@ -11,11 +11,12 @@ app = Flask(__name__, static_url_path='/static', root_path='.')
 config = toml.load(open('./config.toml'))
 # settings
 s = config['data_entry']
-BLOB_PATTERN = Path(
-    config['preprocessing']['blob_dir']).glob("**/*_blob*.json")
+BLOB_JSONS = list(
+    Path(config['preprocessing']['blob_dir']).glob("**/*_blob*.json"))
+
 ORIGINAL_IN = Path(config['preprocessing']['input_dir'])
 ORIGINAL_IN_PARTS = len(ORIGINAL_IN.parts)
-IMAGE_MANAGER = ImageManager(BLOB_PATTERN,
+IMAGE_MANAGER = ImageManager(BLOB_JSONS,
                              s["annotation_field"],
                              s["annotator"],
                              control_length=s["control_length"],
