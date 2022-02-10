@@ -36,8 +36,12 @@ setup_logger(LOGGER)
 def read_json_field(fname, annotation_field):
     data = json.load(open(fname, "r"))
     if annotation_field in data:
+        LOGGER.info(
+            f"Accessed {fname} for field {annotation_field} and found it")
         return data[annotation_field]
     else:
+        LOGGER.info(
+            f"Accessed {fname} for field {annotation_field} and not found it")
         return None
 
 
@@ -151,6 +155,9 @@ class ImageManager:
                 self.current_normal_idx = 0
             for idx, json_fname in enumerate(
                     self.normal_jsons[self.current_normal_idx:]):
+                LOGGER.info(
+                    f"Trying to read field {self.annotation_field} from file {idx}: {json_fname}"
+                )
                 if read_json_field(json_fname, self.annotation_field) is None:
                     FOUND = True
                     blob_json = json_fname
