@@ -13,6 +13,7 @@ dependencies = [
     "tqdm>=4.62.3",
     "flask>=2.0.2",
     "waitress>=2.0.0",
+    "plotly>=5.6.0",
 ]
 requires-python = ">=3.9"
 license = {text = "MIT"}
@@ -30,6 +31,7 @@ preprocess = {call = "omr.preprocess:main('config.toml')"}
 data_entry = {call = "omr.server:run()"}
 data_entry_debug = { cmd = "flask run -p 2022", env = { FLASK_APP="omr.server", FLASK_ENV="development" } }
 check_blob_jsons = {call = "omr.check:check_blob_jsons()"}
+plot_normal_indices = {call = "omr.check:plot_normal_indices()"}
 
 [tool.pdm.dev-dependencies]
 ipython = [

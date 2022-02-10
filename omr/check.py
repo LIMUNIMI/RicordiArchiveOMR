@@ -1,13 +1,11 @@
-from tqdm import tqdm
-from collections import defaultdict
-import json
-from pprint import pprint
-from joblib import Parallel, delayed
-import toml
-from pathlib import Path
-
-
 def check_blob_jsons():
+    import json
+    from pathlib import Path
+    from pprint import pprint
+
+    import toml
+    from tqdm import tqdm
+    from joblib import Parallel, delayed
 
     config = toml.load(open('./config.toml'))
 
@@ -36,3 +34,19 @@ def check_blob_jsons():
     print("Number of files annotated for each field")
     pprint(count)
     print(f"Total number of files: {len(files)}")
+
+
+def plot_normal_indices():
+    import re
+    import plotly.graph_objects as go
+
+    regexp = re.compile(".*[c|C]urrent_normal_idx: (?P<index>[0-9]+)/[0-9]+")
+    data = []
+    with open("server.log") as f:
+        for line in f:
+            m = regexp.match(line)
+            if m:
+                data.append(int(m.group('index')))
+
+    fig = go.Figure(data=go.Scatter(x=list(range(len(data))), y=data))
+    fig.write_html("normal_indices.html")
