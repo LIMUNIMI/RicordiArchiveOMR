@@ -16,16 +16,14 @@ def check_blob_jsons():
         Path(config['preprocessing']['blob_dir']).glob("**/*_blob*.json"))
 
     def _process(file):
-        count = defaultdict(lambda: 1, {})
+        count = {}
         content = json.load(open(file))
         for c in content:
             if content[c] is not None:
-                count[c] += 1
+                count[c] = 1
         return count
 
-    res = Parallel(n_jobs=1)(delayed(_process)(file) for file in tqdm(files))
-
-    pprint(res)
+    res = Parallel(n_jobs=10)(delayed(_process)(file) for file in tqdm(files))
 
     count = {}
     for d in res:
