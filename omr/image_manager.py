@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 import uuid
 import logging
+from enum import Enum
 
 import numpy as np
 from scipy.stats import spearmanr
@@ -11,6 +12,12 @@ from skimage import io
 RNG = np.random.default_rng(1992)
 
 LOGGER = logging.getLogger(__name__)
+
+
+class Status(Enum):
+    NORMAL = 0
+    CHECK_FROM_0 = 1
+    ENDED = 2
 
 
 def setup_logger(logger):
@@ -121,6 +128,7 @@ class ImageManager:
 
         self.is_control = False
         self.enlarge = enlarge
+        self.status = Status.NORMAL
 
     def __init_annotator(self, annotator):
         annotator_json = json.load(open(self.annotator_json_fn))
@@ -150,8 +158,9 @@ class ImageManager:
             FOUND = False
             # here and there, recompute `current_normal_idx` to annotate jsons
             # that may have been skipped
-            if RNG.random() < 0.001:
+            if RNG.random() < 0.0001 and self.status == Status.NORMAL:
                 LOGGER.info("resetting current_normal_idx to 0")
+                self.status = Status.CHECK_FROM_0
                 self.current_normal_idx = 0
             for idx, json_fname in enumerate(
                     self.normal_jsons[self.current_normal_idx:]):
@@ -162,6 +171,7 @@ class ImageManager:
                     FOUND = True
                     blob_json = json_fname
                     # update `current_normal_idx`
+                    self.status = Status.NORMAL
                     self.current_normal_idx += idx + 1
                     LOGGER.info(
                         f"current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
@@ -169,6 +179,7 @@ class ImageManager:
                     LOGGER.info(f"current_normal_json: {blob_json}")
                     break
             if not FOUND:
+                self.status = Status.ENDED
                 raise StopIteration
         # add arguments to the history
         self.history.append((blob_json, is_control))
