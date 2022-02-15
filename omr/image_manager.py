@@ -9,7 +9,7 @@ import numpy as np
 from scipy.stats import spearmanr
 from skimage import io
 
-RNG = np.random.default_rng(1992)
+RNG = np.random.default_rng(1993)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -18,6 +18,9 @@ class Status(Enum):
     NORMAL = 0
     CHECK_FROM_0 = 1
     ENDED = 2
+
+
+STATUS = Status.NORMAL
 
 
 def setup_logger(logger):
@@ -67,6 +70,17 @@ def draw_rectangle(image, x0, y0, x1, y1, color=(255, 0, 0)):
 
 
 class EndedHistoryException(RuntimeError):
+    """
+    An exception thrown when the user has reached the end of history
+    """
+    pass
+
+
+class AskException(RuntimeError):
+    """
+    An exception that is thrown each time that loading a new image is not
+    possible
+    """
     pass
 
 
@@ -128,7 +142,6 @@ class ImageManager:
 
         self.is_control = False
         self.enlarge = enlarge
-        self.status = Status.NORMAL
 
     def __init_annotator(self, annotator):
         annotator_json = json.load(open(self.annotator_json_fn))
@@ -142,6 +155,7 @@ class ImageManager:
         """
         Get the next json from normal or control group and adds its info to the history
         """
+        global STATUS, LOGGER
         # checking if we should provide a control json
         if RNG.random() < 1 / self.control_freq:
             is_control = True
@@ -155,12 +169,18 @@ class ImageManager:
         else:
             is_control = False
             # looking for the first json not annotated
-            FOUND = False
+            # if the server is checking from 0 raise AskException
+            if STATUS == Status.CHECK_FROM_0:
+                LOGGER.info(
+                    "Asked a new image, while checking from 0, request denied!"
+                )
+                raise AskException("Checking from 0!")
             # here and there, recompute `current_normal_idx` to annotate jsons
             # that may have been skipped
-            if RNG.random() < 0.0001 and self.status == Status.NORMAL:
+            FOUND = False
+            if RNG.random() < 0.0001 and STATUS == Status.NORMAL:
                 LOGGER.info("resetting current_normal_idx to 0")
-                self.status = Status.CHECK_FROM_0
+                STATUS = Status.CHECK_FROM_0
                 self.current_normal_idx = 0
             for idx, json_fname in enumerate(
                     self.normal_jsons[self.current_normal_idx:]):
@@ -171,7 +191,7 @@ class ImageManager:
                     FOUND = True
                     blob_json = json_fname
                     # update `current_normal_idx`
-                    self.status = Status.NORMAL
+                    STATUS = Status.NORMAL
                     self.current_normal_idx += idx + 1
                     LOGGER.info(
                         f"current_normal_idx: {self.current_normal_idx}/{len(self.normal_jsons)}"
@@ -179,7 +199,7 @@ class ImageManager:
                     LOGGER.debug(f"current_normal_json: {blob_json}")
                     break
             if not FOUND:
-                self.status = Status.ENDED
+                STATUS = Status.ENDED
                 raise StopIteration
         # add arguments to the history
         self.history.append((blob_json, is_control))

@@ -4,7 +4,7 @@ import toml
 import numpy as np
 from flask import Flask, request
 
-from .image_manager import ImageManager, EndedHistoryException
+from .image_manager import ImageManager, EndedHistoryException, AskException
 
 app = Flask(__name__, static_url_path='/static', root_path='.')
 
@@ -110,6 +110,7 @@ def make_page(idx=None):
     * a link to the full page
     * an optional div with the user rating
     """
+    intro = "La seguente immagine nel rettangolo rosso a quale categoria può essere attribuita?"
     if idx is None or idx <= 1:
         arrow_left = '<a href="/2"><i class="arrow left"></i></a>'
         arrow_right = '<a style="visibility:hidden;"><i class="arrow right"></i></a>'
@@ -139,6 +140,10 @@ def make_page(idx=None):
         elif type(e) is EndedHistoryException:
             big_blob = "<h2>È finita la storia delle immagini!</h2>"
             arrow_left = '<a style="visibility:hidden;"><i class="arrow left"></i></a>'
+        elif type(e) is AskException:
+            big_blob = "<h2>Per piacere, non ricaricare la pagina, ma attendi che il caricamento sia completato!</h2><h4>Se il caricamento dura più di qualche minuto, scrivimi via mail o telegram!</h4>"
+            arrow_right = '<a style="visibility:hidden;"><i class="arrow right"></i></a>'
+            arrow_left = '<a style="visibility:hidden;"><i class="arrow left"></i></a>'
         else:
             raise e
 
@@ -148,6 +153,7 @@ def make_page(idx=None):
         is_control = False
         controllers = ""
         unique_id = ""
+        intro = ""
 
     if IMAGE_MANAGER.new_annotator_rating:
         annotated = IMAGE_MANAGER.current_normal_idx + 1
@@ -177,7 +183,7 @@ def make_page(idx=None):
         {rating_div}
         <div id="content">
             <h1>Archivio Ricordi ASL 2022</h1>
-            <h3>La seguente immagine nel rettangolo rosso a quale categoria può essere attribuita?</h3>
+            <h3>{intro}</h3>
             <p>
                 {from_}
             </p>
