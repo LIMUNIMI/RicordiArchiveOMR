@@ -161,11 +161,9 @@ def make_page(idx=None):
                     <h1>Abbiamo calcolato per te un nuovo punteggio!</h1>
                     Abbiamo stimato che le tue annotazioni sono corrette al
                     <h3>{new_rating}</h3>
-                    <!--
                     Hai annotato il
                     <h3>{ratio}%</h3>
                     delle immagini ({annotated} immagini).
-                    -->
                     <br/>
                     <button id="rating-button" onclick="document.getElementById('rating-background').hidden = true;">Continua</button>
                 </div>
