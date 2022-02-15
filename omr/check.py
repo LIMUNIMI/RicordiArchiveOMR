@@ -40,13 +40,17 @@ def plot_normal_indices():
     import re
     import plotly.graph_objects as go
 
-    regexp = re.compile(".*[c|C]urrent_normal_idx: (?P<index>[0-9]+)/[0-9]+")
+    regexp = re.compile(
+        "(?P<date>^[\d\- :,]{23}).*[c|C]urrent_normal_idx: (?P<index>[0-9]+)/[0-9]+"
+    )
+    xx = []
     data = []
     with open("server.log") as f:
         for line in f:
             m = regexp.match(line)
             if m:
                 data.append(int(m.group('index')))
+                xx.append(str(m.group('date')))
 
-    fig = go.Figure(data=go.Scatter(x=list(range(len(data))), y=data))
+    fig = go.Figure(data=go.Scatter(x=xx, y=data))
     fig.write_html("normal_indices.html")
