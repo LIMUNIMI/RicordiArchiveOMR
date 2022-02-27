@@ -14,7 +14,7 @@
   # port for the app
   port = 1992
   # the name that will be used for the control json
-  annotator = "tenca1"
+  annotator = "mariecurie-cernusco1"
 
 [data_entry.annotation_values] 
   # the buttons with their annotation value
