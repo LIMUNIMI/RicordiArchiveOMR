@@ -12,15 +12,20 @@
 5. `exec $SHELL`
 
 ### Prepare our project
-6. install python >= 3.9: `pyenv install 3.9.7`
-7. install pdm: `curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -`, other info on the [website](https://pdm.fming.dev/)
-8. install dependencies: `pdm sync`
+6. install python >= 3.9: `pyenv install 3.9.16` (recommended is 3.9.16)
+7. install pdm: `pipx install pdm`, other info on the [website](https://pdm.fming.dev/)
+8. install dependencies: `pdm install`
+9. for Jupyter, you will also need NodeJS available on your system
 
-## Preprocess
+This will use the PyPI CUDA libraries. For using different CUDA libraries, you have to
+change the `pyproject.toml` file using the extra options provided by `pytorch` (see
+docs).
+
+## Pre-process
 
 1. setup the relative section in `config.toml`
 2. remove staff-lines: `./preprocess.sh`; if it stops, you can restart it
-3. `pdm run preprocess`
+3. `pdm preprocess`
 
 After this, you will find two files ending with `_nostaff.jpg` and
 `_nostaff.json` for each file in the archive, containing the image without
@@ -31,8 +36,7 @@ a `.json` file containing the position, the parent image path and the
 annotations (after the _Data Entry_ step).
 
 ## Data Entry
-
-  `pdm run data_entry` 
+- `pdm data_entry` 
 
 This will start the Flask app listening on _all_ hosts requests to your machine
 on port 1992. You can configure the port in `config.toml`, as well as other
@@ -47,3 +51,27 @@ The server will create a 2 files:
 * `__control.json`:
   * keys are `normal` and `control`
   * values are lists of string with the path of the blobs in each split
+
+## Dataset analysis
+
+- `pdm dataset_analysis`
+
+This command will run the rater agreement analysis using the notebook
+`./Confusion_Matrix_Annotation.ipynb` and creating the notebook
+`./Confusion_Matrix_Annotation_result.ipynb`
+
+- `pdm dataset_creation` (first, fix the `dataset_path` variable)
+
+This command will run the rater agreement analysis using the notebook
+`./Create_Dataset.ipynb` and creating the notebook
+`./Create_Dataset_result.ipynb` and the datasets in the current working directory.
+
+## Model runs
+
+First, check the value of the `dataset_path` variable.
+
+- `pdm binary`
+- `pdm multiclass`
+
+These command will use `papermill` to run the notebooks `OMR_Binary.ipynb` and `OMR_Multiclass.ipynb` and
+will create the `OMR_Binary_result.ipynb` and `OMR_Multiclass_result.ipynb`.

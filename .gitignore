@@ -7,3 +7,8 @@ __pypackages__
 .pdm.toml
 
 tags
+binary_dataset
+multiclass_dataset
+.python-version
+.pdm-python
+.ipynb-checkpoints
