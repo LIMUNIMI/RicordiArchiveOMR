@@ -12,3 +12,4 @@ multiclass_dataset
 .python-version
 .pdm-python
 .ipynb-checkpoints
+.ipynb_checkpoints
