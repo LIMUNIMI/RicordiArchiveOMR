@@ -13,3 +13,5 @@ multiclass_dataset
 .pdm-python
 .ipynb-checkpoints
 .ipynb_checkpoints
+data/source
+*.pt
