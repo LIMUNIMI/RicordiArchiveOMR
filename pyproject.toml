@@ -45,8 +45,8 @@ check_blob_jsons = {call = "omr.check:check_blob_jsons()"}
 plot_normal_indices = {call = "omr.check:plot_normal_indices()"}
 dataset_analysis = "papermill Confusion_Matrix_Annotation.ipynb Confusion_Matrix_Annotation_result.ipynb"
 dataset_creation = "papermill Create_Dataset.ipynb Create_Dataset_result.ipynb"
-binary = "papermill ./OMR_Binary.ipynb ./OMR_Binary_result.ipynb"
-multiclass = "papermill ./OMR_Multiclass.ipynb ./OMR_Multiclass_result.ipynb"
+binary = "papermill ./OMR_Binary.ipynb ./OMR_Binary.ipynb"
+multiclass = "papermill ./OMR_Multiclass.ipynb ./OMR_Multiclass.ipynb"
 
 [tool.pdm.dev-dependencies]
 ipython = [
