@@ -18,14 +18,15 @@ dependencies = [
     "scikit-image>=0.19.1",
     "joblib>=1.1.0",
     "toml>=0.10.2",
-    "scikit-learn>=1.0.2",
+    "scikit-learn>=0.24",
     "tqdm>=4.62.3",
     "flask>=2.0.2",
     "waitress>=2.0.0",
     "plotly>=5.6.0",
     "notebook>=7.1.3",
+    "auto-sklearn==0.15.0",
 ]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<3.11"
 license = {text = "MIT"}
 
 [tool]
@@ -43,8 +44,8 @@ data_entry = {call = "omr.server:run()"}
 data_entry_debug = { cmd = "flask run -p 2022", env = { FLASK_APP="omr.server", FLASK_ENV="development" } }
 check_blob_jsons = {call = "omr.check:check_blob_jsons()"}
 plot_normal_indices = {call = "omr.check:plot_normal_indices()"}
-dataset_analysis = "papermill Confusion_Matrix_Annotation.ipynb Confusion_Matrix_Annotation_result.ipynb"
-dataset_creation = "papermill Create_Dataset.ipynb Create_Dataset_result.ipynb"
+dataset_analysis = "papermill Confusion_Matrix_Annotation.ipynb Confusion_Matrix_Annotation.ipynb"
+dataset_creation = "papermill Create_Dataset.ipynb Create_Dataset.ipynb"
 binary = "papermill ./OMR_Binary.ipynb ./OMR_Binary.ipynb"
 multiclass = "papermill ./OMR_Multiclass.ipynb ./OMR_Multiclass.ipynb"
 
