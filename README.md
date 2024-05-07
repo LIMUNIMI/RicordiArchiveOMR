@@ -6,12 +6,14 @@
 1. install pyenv: `curl https://pyenv.run | bash`
 
 ### Prepare staff-line-removal
+
 2. install miniconda2 `PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install miniconda2-4.7.12`
 3. `PYENV_VERSION=miniconda2-4.7.12 conda env create -f staffline.yml`
 4. `PYENV_VERSION=miniconda2-4.7.12 conda init $(basename $SHELL)` (you may need to fix the command substitution syntax)
 5. `exec $SHELL`
 
 ### Prepare our project
+
 6. install python >= 3.9: `pyenv install 3.9.16` (recommended is 3.9.16)
 7. install pdm: `pipx install pdm`, other info on the [website](https://pdm.fming.dev/)
 8. install dependencies: `pdm install`
@@ -36,7 +38,8 @@ a `.json` file containing the position, the parent image path and the
 annotations (after the _Data Entry_ step).
 
 ## Data Entry
-- `pdm data_entry` 
+
+- `pdm data_entry`
 
 This will start the Flask app listening on _all_ hosts requests to your machine
 on port 1992. You can configure the port in `config.toml`, as well as other
@@ -44,27 +47,25 @@ options (documented in `config.toml`).
 
 The server will create a 2 files:
 
-* `__annotator.json`: 
-  * keys are annotators (see `config.toml`);
-  * value of each key is a list of lists where the i-th list represents the
-  annotations given for the i-th control blob
-* `__control.json`:
-  * keys are `normal` and `control`
-  * values are lists of string with the path of the blobs in each split
+- `__annotator.json`:
+  - keys are annotators (see `config.toml`);
+  - value of each key is a list of lists where the i-th list represents the
+    annotations given for the i-th control blob
+- `__control.json`:
+  - keys are `normal` and `control`
+  - values are lists of string with the path of the blobs in each split
 
 ## Dataset analysis
 
 - `pdm dataset_analysis`
 
-This command will run the rater agreement analysis using the notebook
-`./Confusion_Matrix_Annotation.ipynb` and creating the notebook
-`./Confusion_Matrix_Annotation_result.ipynb`
+This command will run the rater agreement analysis using `papermill` and the notebook
+`./Confusion_Matrix_Annotation.ipynb`
 
 - `pdm dataset_creation` (first, fix the `dataset_path` variable)
 
-This command will run the rater agreement analysis using the notebook
-`./Create_Dataset.ipynb` and creating the notebook
-`./Create_Dataset_result.ipynb` and the datasets in the current working directory.
+This command will create the dataset from the annotated files using
+`papermill` and the notebook `./Create_Dataset.ipynb`. The Datasets will be in the directory `./data`.
 
 ## Model runs
 
@@ -73,5 +74,4 @@ First, check the value of the `dataset_path` variable.
 - `pdm binary`
 - `pdm multiclass`
 
-These command will use `papermill` to run the notebooks `OMR_Binary.ipynb` and `OMR_Multiclass.ipynb` and
-will create the `OMR_Binary_result.ipynb` and `OMR_Multiclass_result.ipynb`.
+These command will use `papermill` to run the notebooks `OMR_Binary.ipynb` and `OMR_Multiclass.ipynb`.
