@@ -3,7 +3,7 @@
 > [!IMPORTANT] 
 > If you like our work and use it in your work, cite us:
 > 
-> Simonetta F., Mondal R., Ludovico A., Ntalampiras S. "_Optical Music Recognition in Manuscripts from the Ricordi Archive_", AudioMostly 2024, Milan, Italy. DOI: https://doi.org/10.1145/3678299.3678324
+> Simonetta F., Mondal R., Ludovico L. A., Ntalampiras S. "_Optical Music Recognition in Manuscripts from the Ricordi Archive_", AudioMostly 2024, Milan, Italy. DOI: https://doi.org/10.1145/3678299.3678324
 
 ## Setup
 
